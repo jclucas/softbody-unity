@@ -2,16 +2,21 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Draggable : MonoBehaviour {
+public class Draggable : Object {
 
-    // Start is called before the first frame update
-    void Start() {
-        
+    void OnMouseDown() {
+        // start registering
+        Debug.Log("Touched");
+    }
+
+    void OnMouseUp() {
+        // stop registering
+        Debug.Log("Untouched");
     }
 
     // Update is called once per frame
     void Update() {
         
     }
-    
+
 }

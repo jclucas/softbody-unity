@@ -12,6 +12,11 @@ public class Physics : MonoBehaviour {
     // Update is called once per frame
     void Update() {
         
+        // // update each physics object
+        // foreach (var child in GetComponentsInChildren<PhysicsObject>()) {
+        //     // maybe??
+        // }
+
     }
-    
+
 }
