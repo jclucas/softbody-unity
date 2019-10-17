@@ -6,30 +6,32 @@ public class PhysicsObject : Object {
 
     // PUBLIC PROPERTIES
 
-    public float mass;
+    public float mass = 1;
 
     // constant for all physics objects
     public static Vector3 gravity = new Vector3(0, -9.81f, 0);
 
-    private Vector3 velocity;
+    public Vector3 accel = gravity;
 
-    private Vector3 momentum;
+    public Vector3 velocity = new Vector3(0, 0, 0);
+
+    public Vector3 momentum = new Vector3(0, 0, 0);
 
     // Start is called before the first frame update
     void Start() {
 
         // initial values
-        velocity = new Vector3(0, 0, 0);
-        momentum = new Vector3(0, 0, 0);
+        // velocity = new Vector3(0, 0, 0);
+        // momentum = new Vector3(0, 0, 0);
         Debug.Log("Good morning, I am an object of mass " + mass);
 
     }
 
     // Update is called once per frame
-    void Update() {
+    internal void Update() {
         
         // calculate forces
-        var F = gravity * mass;
+        var F = accel * mass;
 
         // integrate position and rotation
         // s(t+dt) = s(t) + v(t)dt
