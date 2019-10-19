@@ -43,7 +43,10 @@ public class PhysicsObject : Object {
         momentum += F * Time.deltaTime;
 
         // collision detection
-        DetectCollisions();
+        var impulse = DetectCollisions();
+
+        // update momentum
+        momentum += F * Time.deltaTime + impulse;
 
         // update velocities
         velocity = momentum / mass;
@@ -52,11 +55,17 @@ public class PhysicsObject : Object {
 
     // UTILITY FUNCTIONS
 
-    private void DetectCollisions() {
+    private Vector3 DetectCollisions() {
 
         // CHEATING just don't let it go below the floor
         if (transform.position.y < 0.5) {
+            // back up to before collision
             transform.position = new Vector3(transform.position.x, 0.5f, transform.position.z);
+            // calculate impulse
+            // CHEATING just absorb all momentum
+            return momentum * -1;
+        } else {
+            return Vector3.zero;
         }
 
     }
