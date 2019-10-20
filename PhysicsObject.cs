@@ -30,17 +30,20 @@ public class PhysicsObject : Object {
     // Start is called before the first frame update
     void Start() {
         
-        mesh = GetComponent<MeshFilter>().mesh;
+        mesh = GetComponent<MeshFilter>().mesh.WeldVertices();
         edges = new EdgeList(mesh);
         accel = new Vector3[mesh.vertexCount];
         velocity = new Vector3[mesh.vertexCount];
         momentum = new Vector3[mesh.vertexCount];
 
         for (var i = 0; i < mesh.vertexCount; i++) {
-            accel[i] = gravity;
+            accel[i] = Vector3.zero; // gravity;
             velocity[i] = Vector3.zero;
             momentum[i] = Vector3.zero;
         }
+
+        // test: apply initial force to vertex 0
+        accel[0] = Vector3.up;
 
     }
 
@@ -52,7 +55,11 @@ public class PhysicsObject : Object {
         for (var i = 0; i < mesh.vertexCount; i++) {
 
             foreach (int n in edges.GetNeighbors(i)) {
-                accel[i] += getSpringForce(edges.GetDisplacement(n, i), internalK);
+                var F = getSpringForce(edges.GetDisplacement(n, i), internalK) / mass;
+                if (Vector3.Magnitude(F) > 0.01) {
+                    Debug.Log("Vertex " + n + " applying a force of " +  F + " to " + i);
+                    accel[i] += F;
+                }
             }
 
         }
@@ -104,7 +111,7 @@ public class PhysicsObject : Object {
     }
 
     private static Vector3 getSpringForce(Vector3 d, float k) {
-        return d * k; // * -1;
+        return d * k * -1;
     }
 
 }
