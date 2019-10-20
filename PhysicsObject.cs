@@ -19,13 +19,21 @@ public class PhysicsObject : Object {
 
     public Vector3 momentum = new Vector3(0, 0, 0);
 
+    // GEOMETRY
+
+    private Mesh mesh;
+
+    private EdgeList edges;
+
     // Start is called before the first frame update
     void Start() {
 
         // initial values
         // velocity = new Vector3(0, 0, 0);
         // momentum = new Vector3(0, 0, 0);
-        Debug.Log("Good morning, I am an object of mass " + mass);
+        
+        mesh = GetComponent<MeshFilter>().mesh;
+        edges = new EdgeList(mesh);
 
     }
 
