@@ -36,17 +36,17 @@ public class PhysicsObject : Object {
         // integrate position and rotation
         // s(t+dt) = s(t) + v(t)dt
         // q(t+dt) = q(t) + 0.5(w(t)q(t))dt
-        transform.position += velocity * Time.deltaTime;
+        transform.position += transform.position.IntegrateMidpoint(velocity, Time.deltaTime);
 
         // update momentum (integrate forces)
         // M(t+dt) = M(t) + F(t)dt
-        momentum += F * Time.deltaTime;
+        momentum += momentum.IntegrateMidpoint(F, Time.deltaTime);
 
         // collision detection
         var impulse = DetectCollisions();
 
         // update momentum
-        momentum += F * Time.deltaTime + impulse;
+        momentum += impulse;
 
         // update velocities
         velocity = momentum / mass;
