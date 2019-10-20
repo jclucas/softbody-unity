@@ -8,6 +8,8 @@ public class PhysicsObject : Object {
 
     public float mass = 1;
 
+    public float k = 1;
+
     // constant for all physics objects
     public static Vector3 gravity = new Vector3(0, -9.81f, 0);
 
@@ -34,19 +36,13 @@ public class PhysicsObject : Object {
         var F = accel * mass;
 
         // integrate position and rotation
-        // s(t+dt) = s(t) + v(t)dt
-        // q(t+dt) = q(t) + 0.5(w(t)q(t))dt
-        transform.position += transform.position.IntegrateMidpoint(velocity, Time.deltaTime);
+        transform.position = transform.position.IntegrateMidpoint(velocity, Time.deltaTime);
+
+        // collision detection, get penalty force
+        var penalty = DetectCollisions();
 
         // update momentum (integrate forces)
-        // M(t+dt) = M(t) + F(t)dt
-        momentum += momentum.IntegrateMidpoint(F, Time.deltaTime);
-
-        // collision detection
-        var impulse = DetectCollisions();
-
-        // update momentum
-        momentum += impulse;
+        momentum = momentum.IntegrateMidpoint(F + penalty, Time.deltaTime);
 
         // update velocities
         velocity = momentum / mass;
@@ -59,15 +55,22 @@ public class PhysicsObject : Object {
 
         // CHEATING just don't let it go below the floor
         if (transform.position.y < 0.5) {
+
             // back up to before collision
-            transform.position = new Vector3(transform.position.x, 0.5f, transform.position.z);
-            // calculate impulse
-            // CHEATING just absorb all momentum
-            return momentum * -1;
+            var surface = new Vector3(transform.position.x, 0.5f, transform.position.z);
+            var delta = transform.position - surface;
+
+            // calculate spring force
+            return getSpringForce(delta, k);
+
         } else {
             return Vector3.zero;
         }
 
+    }
+
+    private static Vector3 getSpringForce(Vector3 d, float k) {
+        return d * k * -1;
     }
 
 }
