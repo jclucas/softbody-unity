@@ -8,16 +8,18 @@ public class PhysicsObject : Object {
 
     public float mass = 1;
 
-    public float k = 1;
+    public float internalK = 50;
+
+    public float collisionK = 1000;
 
     // constant for all physics objects
     public static Vector3 gravity = new Vector3(0, -9.81f, 0);
 
-    public Vector3 accel = gravity;
+    public Vector3[] accel;
 
-    public Vector3 velocity = new Vector3(0, 0, 0);
+    public Vector3[] velocity;
 
-    public Vector3 momentum = new Vector3(0, 0, 0);
+    public Vector3[] momentum;
 
     // GEOMETRY
 
@@ -27,49 +29,73 @@ public class PhysicsObject : Object {
 
     // Start is called before the first frame update
     void Start() {
-
-        // initial values
-        // velocity = new Vector3(0, 0, 0);
-        // momentum = new Vector3(0, 0, 0);
         
         mesh = GetComponent<MeshFilter>().mesh;
         edges = new EdgeList(mesh);
+        accel = new Vector3[mesh.vertexCount];
+        velocity = new Vector3[mesh.vertexCount];
+        momentum = new Vector3[mesh.vertexCount];
+
+        for (var i = 0; i < mesh.vertexCount; i++) {
+            accel[i] = gravity;
+            velocity[i] = Vector3.zero;
+            momentum[i] = Vector3.zero;
+        }
 
     }
 
     // Update is called once per frame
     internal void Update() {
         
-        // calculate forces
-        var F = accel * mass;
+        var vertices = mesh.vertices;
 
-        // integrate position and rotation
-        transform.position = transform.position.IntegrateMidpoint(velocity, Time.deltaTime);
+        for (var i = 0; i < mesh.vertexCount; i++) {
 
-        // collision detection, get penalty force
-        var penalty = DetectCollisions();
+            foreach (int n in edges.GetNeighbors(i)) {
+                accel[i] += getSpringForce(edges.GetDisplacement(n, i), internalK);
+            }
 
-        // update momentum (integrate forces)
-        momentum = momentum.IntegrateMidpoint(F + penalty, Time.deltaTime);
+        }
 
-        // update velocities
-        velocity = momentum / mass;
+        for (var i = 0; i < mesh.vertexCount; i++) {    
+            
+            // calculate forces
+            var F = accel[i] * mass;
+
+            // integrate position and rotation
+            vertices[i] = vertices[i].IntegrateMidpoint(velocity[i], Time.deltaTime);
+
+            // collision detection, get penalty force
+            var penalty = DetectCollisions(i);
+
+            // update momentum (integrate forces)
+            momentum[i] = momentum[i].IntegrateMidpoint(F + penalty, Time.deltaTime);
+
+            // update velocities
+            velocity[i] = momentum[i] / mass;
+        
+        }
+
+        mesh.vertices = vertices;
 
     }
 
     // UTILITY FUNCTIONS
 
-    private Vector3 DetectCollisions() {
+    private Vector3 DetectCollisions(int i) {
+
+        // world space transform
+        var world = transform.TransformPoint(mesh.vertices[i]);
 
         // CHEATING just don't let it go below the floor
-        if (transform.position.y < 0.5) {
+        if (world.y < 0) {
 
             // back up to before collision
-            var surface = new Vector3(transform.position.x, 0.5f, transform.position.z);
+            var surface = transform.InverseTransformPoint(new Vector3(world.x, 0, world.z));
             var delta = transform.position - surface;
 
             // calculate spring force
-            return getSpringForce(delta, k);
+            return getSpringForce(delta, collisionK);
 
         } else {
             return Vector3.zero;
@@ -78,7 +104,7 @@ public class PhysicsObject : Object {
     }
 
     private static Vector3 getSpringForce(Vector3 d, float k) {
-        return d * k * -1;
+        return d * k; // * -1;
     }
 
 }
