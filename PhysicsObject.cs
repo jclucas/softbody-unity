@@ -12,6 +12,8 @@ public class PhysicsObject : Object {
 
     public float collisionK = 1000;
 
+    public float damping = 1;
+
     // constant for all physics objects
     public static Vector3 gravity = new Vector3(0, -9.81f, 0);
 
@@ -30,20 +32,17 @@ public class PhysicsObject : Object {
     // Start is called before the first frame update
     void Start() {
         
-        mesh = GetComponent<MeshFilter>().mesh.WeldVertices();
+        mesh = GetComponent<MeshFilter>().mesh;
         edges = new EdgeList(mesh);
         accel = new Vector3[mesh.vertexCount];
         velocity = new Vector3[mesh.vertexCount];
         momentum = new Vector3[mesh.vertexCount];
 
         for (var i = 0; i < mesh.vertexCount; i++) {
-            accel[i] = Vector3.zero; // gravity;
+            accel[i] = gravity;
             velocity[i] = Vector3.zero;
             momentum[i] = Vector3.zero;
         }
-
-        // test: apply initial force to vertex 0
-        accel[0] = Vector3.up;
 
     }
 
@@ -55,8 +54,9 @@ public class PhysicsObject : Object {
         for (var i = 0; i < mesh.vertexCount; i++) {
 
             foreach (int n in edges.GetNeighbors(i)) {
-                var F = getSpringForce(edges.GetDisplacement(n, i), internalK) / mass;
+                var F = getSpringForce(edges.GetDisplacement(n, i), velocity[n] - velocity[i], internalK, damping) / mass;
                 if (Vector3.Magnitude(F) > 0.01) {
+                    
                     Debug.Log("Vertex " + n + " applying a force of " +  F + " to " + i);
                     accel[i] += F;
                 }
@@ -99,10 +99,10 @@ public class PhysicsObject : Object {
 
             // back up to before collision
             var surface = transform.InverseTransformPoint(new Vector3(world.x, 0, world.z));
-            var delta = transform.position - surface;
+            var delta = mesh.vertices[i] - surface;
 
             // calculate spring force
-            return getSpringForce(delta, collisionK);
+            return getSpringForce(delta, velocity[i], collisionK, damping);
 
         } else {
             return Vector3.zero;
@@ -110,8 +110,10 @@ public class PhysicsObject : Object {
 
     }
 
-    private static Vector3 getSpringForce(Vector3 d, float k) {
-        return d * k * -1;
+    // k: spring constant
+    // c: damping constant
+    private static Vector3 getSpringForce(Vector3 d, Vector3 v, float k, float c) {
+        return (d * k * -1) - (c * v);
     }
 
 }

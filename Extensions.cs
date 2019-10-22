@@ -55,8 +55,8 @@ public static class Extensions {
 
         vertices.TrimExcess();
 
-        mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles;
+        mesh.vertices = vertices.ToArray();
 
         mesh.RecalculateNormals();
         mesh.RecalculateTangents();
