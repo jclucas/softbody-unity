@@ -39,6 +39,7 @@ public class PhysicsObject : Object {
         momentum = new Vector3[mesh.vertexCount];
 
         for (var i = 0; i < mesh.vertexCount; i++) {
+            Debug.Log("VERTEX " + i + ": " + mesh.vertices[i]);
             accel[i] = gravity;
             velocity[i] = Vector3.zero;
             momentum[i] = Vector3.zero;
@@ -51,32 +52,22 @@ public class PhysicsObject : Object {
         
         var vertices = mesh.vertices;
 
+        // calculate forces
         for (var i = 0; i < mesh.vertexCount; i++) {
-
-            foreach (int n in edges.GetNeighbors(i)) {
-                var F = getSpringForce(edges.GetDisplacement(n, i), velocity[n] - velocity[i], internalK, damping) / mass;
-                if (Vector3.Magnitude(F) > 0.01) {
-                    
-                    Debug.Log("Vertex " + n + " applying a force of " +  F + " to " + i);
-                    accel[i] += F;
-                }
-            }
-
+            accel[i] = gravity + getEdgeForce(i) / mass;
         }
 
-        for (var i = 0; i < mesh.vertexCount; i++) {    
-            
-            // calculate forces
-            var F = accel[i] * mass;
+        for (var i = 0; i < mesh.vertexCount; i++) {
 
             // integrate position and rotation
-            vertices[i] = vertices[i].IntegrateMidpoint(velocity[i], Time.deltaTime);
+            vertices[i] = vertices[i].Integrate(velocity[i], Time.deltaTime);
 
             // collision detection, get penalty force
             var penalty = DetectCollisions(i);
 
             // update momentum (integrate forces)
-            momentum[i] = momentum[i].IntegrateMidpoint(F + penalty, Time.deltaTime);
+            var F = accel[i] * mass;
+            momentum[i] = momentum[i].IntegrateEuler(F + penalty, Time.deltaTime);
 
             // update velocities
             velocity[i] = momentum[i] / mass;
@@ -107,6 +98,24 @@ public class PhysicsObject : Object {
         } else {
             return Vector3.zero;
         }
+
+    }
+
+    private Vector3 getEdgeForce(int i) {
+
+        Vector3 force = Vector3.zero;
+
+        foreach (int n in edges.GetNeighbors(i)) {
+
+            var F = getSpringForce(edges.GetDisplacement(i, n), velocity[n] - velocity[i], internalK, damping) / mass;
+            if (Vector3.Magnitude(F) > 0.01) {
+                
+                Debug.Log("Vertex " + i + " applying a force of " +  F + " to " + n);
+                force += F;
+            }
+        }
+
+        return force;
 
     }
 

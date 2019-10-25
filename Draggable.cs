@@ -16,7 +16,7 @@ public class Draggable : PhysicsObject {
 
         // start registering
         clicked = true;
-        accel = new Vector3(0, 0, 0);
+        // accel = new Vector3(0, 0, 0);
 
         // get initial object location
         screenPoint = Camera.main.WorldToScreenPoint(transform.position);
@@ -33,7 +33,7 @@ public class Draggable : PhysicsObject {
 
         // stop registering
         clicked = false;
-        accel = gravity;
+        // accel = gravity;
 
         // calculate velocity of fling
 
@@ -45,7 +45,7 @@ public class Draggable : PhysicsObject {
         // add the user input force
         if (clicked) {
             // equal and opposite to current momentum
-            momentum = new Vector3(0, 0, 0);
+            // momentum = new Vector3(0, 0, 0);
         }
 
         base.Update();

@@ -37,7 +37,7 @@ public class EdgeList {
 
     private void AddEdge(int a, int b) {
         if (!neighbors[a].ContainsKey(b)) {
-            neighbors[a].Add(b, Vector3.Distance(mesh.vertices[b], mesh.vertices[a]));
+            neighbors[a].Add(b, Vector3.Distance(mesh.vertices[a], mesh.vertices[b]));
         }
     }
 
