@@ -24,13 +24,12 @@ public class PhysicsObject : Object {
     private Mesh mesh;
 
     // private
-    public List<Particle> particles;
+    public List<Particle> particles = new List<Particle>();
 
     // Start is called before the first frame update
     void Start() {
         
         mesh = GetComponent<MeshFilter>().mesh;
-        particles = new List<Particle>();
 
         // set static values
         Particle.k = this.internalK;
@@ -60,19 +59,23 @@ public class PhysicsObject : Object {
         }
 
         // add global forces
-        forces.Add(new Force((state, dt) => state.mass * gravity));
+        forces.Add(new Force((state, dt) => state.mass * gravity, particles));
 
         // add edges
         for (int i = 0; i < mesh.triangles.Length; i += 3) {
             var a = map[mesh.vertices[mesh.triangles[i]]];
             var b = map[mesh.vertices[mesh.triangles[i + 1]]];
             var c = map[mesh.vertices[mesh.triangles[i + 2]]];
-            a.AddEdge(ref b);
-            a.AddEdge(ref c);
-            b.AddEdge(ref a);
-            b.AddEdge(ref c);
-            c.AddEdge(ref a);
-            c.AddEdge(ref b);
+            // a.AddEdge(ref b);
+            // a.AddEdge(ref c);
+            // b.AddEdge(ref a);
+            // b.AddEdge(ref c);
+            // c.AddEdge(ref a);
+            // c.AddEdge(ref b);
+            forces.Add(new BinaryForce((ParticleState state, ParticleState other, float dt) => {
+                var d = GetDisplacement(state.position, other.position, 2.0f);
+                return GetSpringForce(d, state.velocity, kInternal, damping);
+            }, a, b));
         }
 
         Debug.Log("All done :)");
@@ -97,12 +100,12 @@ public class PhysicsObject : Object {
         //     // }
         // }
 
+        foreach (var f in forces) {
+            f.Apply();
+        }
 
         foreach (var p in particles) {
-
-            p.state = p.state.IntegrateEuler(forces[0], Time.deltaTime);
             p.UpdateMesh(ref vertices);
-        
         }
 
         mesh.vertices = vertices;
