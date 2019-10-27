@@ -17,33 +17,65 @@ public class PhysicsObject : Object {
     // constant for all physics objects
     public static Vector3 gravity = new Vector3(0, -9.81f, 0);
 
-    public Vector3[] accel;
-
-    public Vector3[] velocity;
-
-    public Vector3[] momentum;
+    public List<Force> forces = new List<Force>();
 
     // GEOMETRY
 
     private Mesh mesh;
 
-    private EdgeList edges;
+    // private
+    public List<Particle> particles;
 
     // Start is called before the first frame update
     void Start() {
         
         mesh = GetComponent<MeshFilter>().mesh;
-        edges = new EdgeList(mesh);
-        accel = new Vector3[mesh.vertexCount];
-        velocity = new Vector3[mesh.vertexCount];
-        momentum = new Vector3[mesh.vertexCount];
+        particles = new List<Particle>();
+
+        // set static values
+        Particle.k = this.internalK;
+        Particle.damping = this.damping;
+
+        // construct dictionary of same points
+        var points = new Dictionary<Vector3, List<int>>();
 
         for (var i = 0; i < mesh.vertexCount; i++) {
-            Debug.Log("VERTEX " + i + ": " + mesh.vertices[i]);
-            accel[i] = gravity;
-            velocity[i] = Vector3.zero;
-            momentum[i] = Vector3.zero;
+
+            if (!points.ContainsKey(mesh.vertices[i])) {
+                points.Add(mesh.vertices[i], new List<int>());
+            } 
+
+            points[mesh.vertices[i]].Add(i);
+
         }
+
+        // temporary map of vertex -> particle
+        var map = new Dictionary<Vector3, Particle>();
+
+        // add vertices
+        foreach (var p in points) {
+            var newParticle = new Particle(p.Key, mass, p.Value);
+            particles.Add(newParticle);
+            map.Add(p.Key, newParticle);
+        }
+
+        // add global forces
+        forces.Add(new Force((state, dt) => state.mass * gravity));
+
+        // add edges
+        for (int i = 0; i < mesh.triangles.Length; i += 3) {
+            var a = map[mesh.vertices[mesh.triangles[i]]];
+            var b = map[mesh.vertices[mesh.triangles[i + 1]]];
+            var c = map[mesh.vertices[mesh.triangles[i + 2]]];
+            a.AddEdge(ref b);
+            a.AddEdge(ref c);
+            b.AddEdge(ref a);
+            b.AddEdge(ref c);
+            c.AddEdge(ref a);
+            c.AddEdge(ref b);
+        }
+
+        Debug.Log("All done :)");
 
     }
 
@@ -53,24 +85,23 @@ public class PhysicsObject : Object {
         var vertices = mesh.vertices;
 
         // calculate forces
-        for (var i = 0; i < mesh.vertexCount; i++) {
-            accel[i] = gravity + getEdgeForce(i) / mass;
-        }
+        // for (var i = 0; i < mesh.vertexCount; i++) {
+        //     accel[i] = gravity + getEdgeForce(i) / mass;
+        // }
 
-        for (var i = 0; i < mesh.vertexCount; i++) {
+        // foreach (var p in particles) {
+        //     p.force = gravity * mass;
+        //     // foreach (var n in p.neighbors) {
+        //     //     p.force += GetSpringForce(GetDisplacement(p.GetPosition(), n.Key.GetPosition(), n.Value),
+        //     //             p.state.velocity, internalK, damping);
+        //     // }
+        // }
 
-            // integrate position and rotation
-            vertices[i] = vertices[i].Integrate(velocity[i], Time.deltaTime);
 
-            // collision detection, get penalty force
-            var penalty = DetectCollisions(i);
+        foreach (var p in particles) {
 
-            // update momentum (integrate forces)
-            var F = accel[i] * mass;
-            momentum[i] = momentum[i].IntegrateEuler(F + penalty, Time.deltaTime);
-
-            // update velocities
-            velocity[i] = momentum[i] / mass;
+            p.state = p.state.IntegrateEuler(forces[0], Time.deltaTime);
+            p.UpdateMesh(ref vertices);
         
         }
 
@@ -80,49 +111,55 @@ public class PhysicsObject : Object {
 
     // UTILITY FUNCTIONS
 
-    private Vector3 DetectCollisions(int i) {
+    // private Vector3 DetectCollisions(int i) {
 
-        // world space transform
-        var world = transform.TransformPoint(mesh.vertices[i]);
+    //     // world space transform
+    //     var world = transform.TransformPoint(mesh.vertices[i]);
 
-        // CHEATING just don't let it go below the floor
-        if (world.y < 0) {
+    //     // CHEATING just don't let it go below the floor
+    //     if (world.y < 0) {
 
-            // back up to before collision
-            var surface = transform.InverseTransformPoint(new Vector3(world.x, 0, world.z));
-            var delta = mesh.vertices[i] - surface;
+    //         // back up to before collision
+    //         var surface = transform.InverseTransformPoint(new Vector3(world.x, 0, world.z));
+    //         var delta = mesh.vertices[i] - surface;
 
-            // calculate spring force
-            return getSpringForce(delta, velocity[i], collisionK, damping);
+    //         // calculate spring force
+    //         return getSpringForce(delta, velocity[i], collisionK, damping);
 
-        } else {
-            return Vector3.zero;
-        }
+    //     } else {
+    //         return Vector3.zero;
+    //     }
 
-    }
+    // }
 
-    private Vector3 getEdgeForce(int i) {
+    // private Vector3 getEdgeForce(int i) {
 
-        Vector3 force = Vector3.zero;
+    //     Vector3 force = Vector3.zero;
 
-        foreach (int n in edges.GetNeighbors(i)) {
+    //     foreach (int n in edges.GetNeighbors(i)) {
 
-            var F = getSpringForce(edges.GetDisplacement(i, n), velocity[n] - velocity[i], internalK, damping) / mass;
-            if (Vector3.Magnitude(F) > 0.01) {
+    //         var F = getSpringForce(edges.GetDisplacement(i, n), velocity[n] - velocity[i], internalK, damping) / mass;
+    //         if (Vector3.Magnitude(F) > 0.01) {
                 
-                Debug.Log("Vertex " + i + " applying a force of " +  F + " to " + n);
-                force += F;
-            }
-        }
+    //             Debug.Log("Vertex " + i + " applying a force of " +  F + " to " + n);
+    //             force += F;
+    //         }
+    //     }
 
-        return force;
+    //     return force;
 
-    }
+    // }
 
     // k: spring constant
     // c: damping constant
-    private static Vector3 getSpringForce(Vector3 d, Vector3 v, float k, float c) {
+    private static Vector3 GetSpringForce(Vector3 d, Vector3 v, float k, float c) {
         return (d * k * -1) - (c * v);
+    }
+
+    public Vector3 GetDisplacement(Vector3 a, Vector3 b, float expected) {
+        var actual = a - b;
+        var displacement = Vector3.Magnitude(actual) - expected;
+        return displacement * (actual / Vector3.Magnitude(actual));
     }
 
 }

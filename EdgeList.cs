@@ -50,7 +50,6 @@ public class EdgeList {
     public Vector3 GetDisplacement(int a, int b) {
         var actual = mesh.vertices[a] - mesh.vertices[b];
         var displacement = Vector3.Magnitude(actual) - neighbors[a][b];
-        Debug.Log("Expected distance between " + a + " and " + b + ": " + neighbors[a][b] + "\nActual distance: " + Vector3.Magnitude(actual) + " (difference " + displacement + ")");
         return displacement * (actual / Vector3.Magnitude(actual));
     }
 
