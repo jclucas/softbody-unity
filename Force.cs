@@ -11,9 +11,10 @@ public class Force {
     // particles to apply it to
     public List<Particle> particles;
 
-    public Force(EvalFunction eval) {
-        this.eval = eval;
-    }
+    // this is illegal
+    // public Force(EvalFunction eval) {
+    //     this.eval = eval;
+    // }
 
     public Force(EvalFunction eval, List<Particle> particles) {
         this.eval = eval;
@@ -21,13 +22,13 @@ public class Force {
     }
 
     public void Apply() {
-        ParticleState[] newState = new ParticleState[particles.Count];
-        for (var i = 0; i < particles.Count; i++) {
-            newState[i] = particles[i].state;
+        Dictionary<Particle, ParticleState> newState = new Dictionary<Particle, ParticleState>();
+        foreach (var p in particles) {
+            newState.Add(p, p.state);
         }
-        newState = newState.IntegrateMidpoint(this, Time.deltaTime);
-        for (var i = 0; i < particles.Count; i++) {
-            particles[i].state = newState[i];
+        newState = newState.IntegrateMidpoint(this, Time.fixedDeltaTime);
+        foreach (var p in particles) {
+            p.state = newState[p];
         }
     }
 

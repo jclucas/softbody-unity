@@ -21,7 +21,7 @@ public class Particle {
 
     public Particle(Vector3 position, float mass, List<int> vertices) {
         this.vertices = vertices;
-        state = new ParticleState(this, position);
+        state = new ParticleState(position);
         this.mass = mass;
         neighbors = new Dictionary<Particle, float>();
     }
@@ -50,26 +50,35 @@ public class Particle {
         return Vector3.Distance(state.position, other.state.position);
     }
 
+    public bool CollidesPlane(Plane p) {
+        return (p.GetDistanceToPoint(state.position) < 0);
+    }
+
+    // impulse for collision with a plane with normal n
+    public Vector3 GetImpulsePlane(Vector3 n, float e) {
+        return ((-(1 + e) * (Vector3.Dot(this.state.velocity, n))) / (1/this.mass)) * n;
+    }
+
     // private Vector3 GetDisplacement(Particle other) {}
 
 }
 
 public class ParticleState {
 
-    public Particle particle;
+    // public Particle particle;
     public Vector3 position;
     public Vector3 velocity;
     public Vector3 force;
 
-    public ParticleState(Particle particle) {
-        this. particle = particle;
+    public ParticleState() {
+        // this. particle = particle;
         this.position = Vector3.zero;
         this.velocity = Vector3.zero;
         this.force = Vector3.zero;
     }
 
-    public ParticleState(Particle particle, Vector3 position) {
-        this.particle = particle;
+    public ParticleState(Vector3 position) {
+        // this.particle = particle;
         this.position = position;
         this.velocity = Vector3.zero;
         this.force = Vector3.zero;
@@ -112,7 +121,7 @@ public class ParticleState {
     // !! warning.. assumes a.particle == b.particle !!
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     public static ParticleState operator +(ParticleState a, ParticleState b) {
-        var state = new ParticleState(a.particle);
+        var state = new ParticleState();
         state.position = a.position + b.position;
         state.velocity = a.velocity + b.velocity;
         state.force = a.force + b.force;
@@ -120,7 +129,7 @@ public class ParticleState {
     }
 
     public static ParticleState operator *(ParticleState a, float s) {
-        var state = new ParticleState(a.particle);
+        var state = new ParticleState();
         state.position = a.position * s;
         state.velocity = a.velocity * s;
         state.force = a.force * s;

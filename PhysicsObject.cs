@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PhysicsObject : Object {
+public class PhysicsObject : MonoBehaviour {
 
     // PUBLIC PROPERTIES
 
@@ -26,6 +26,9 @@ public class PhysicsObject : Object {
     // private
     public List<Particle> particles = new List<Particle>();
 
+    // the floor
+    private Plane floor = new Plane(Vector3.up, new Vector3(0, -3, 0));
+
     // Start is called before the first frame update
     void Start() {
         
@@ -34,6 +37,9 @@ public class PhysicsObject : Object {
         // set static values
         Particle.k = this.internalK;
         Particle.damping = this.damping;
+
+        // TEMP set collision bounds
+        // floor = new Plane(Vector3.up, transform.InverseTransformVector(Vector3.zero));
 
         // construct dictionary of same points
         var points = new Dictionary<Vector3, List<int>>();
@@ -60,16 +66,22 @@ public class PhysicsObject : Object {
 
         // add global forces
         forces.Add(new Force((p, state, dt) => p.mass * gravity, particles));
+        forces.Add(new Force((p, state, dt) => {
+            if (p.CollidesPlane(floor)) {
+                return p.GetImpulsePlane(Vector3.up, 1) / dt;
+            }
+            return Vector3.zero;
+        }, particles));
 
         // add edges
-        Force edges = new Force((p, state, dt) => {
-                Vector3 f = Vector3.zero;
-                foreach (var other in p.neighbors) {
-                    var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
-                    f += GetSpringForce(d, state[p].velocity, internalK, damping);
-                }
-                return f;
-        });
+        forces.Add(new Force((p, state, dt) => {
+            Vector3 f = Vector3.zero;
+            foreach (var other in p.neighbors) {
+                var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
+                f += GetSpringForce(d, state[p].velocity, internalK, damping);
+            }
+            return f;
+        }, particles));
 
         for (int i = 0; i < mesh.triangles.Length; i += 3) {
             var a = map[mesh.vertices[mesh.triangles[i]]];
@@ -83,27 +95,12 @@ public class PhysicsObject : Object {
             c.AddEdge(ref b);
         }
 
-        Debug.Log("All done :)");
-
     }
 
     // Update is called once per frame
     internal void Update() {
         
         var vertices = mesh.vertices;
-
-        // calculate forces
-        // for (var i = 0; i < mesh.vertexCount; i++) {
-        //     accel[i] = gravity + getEdgeForce(i) / mass;
-        // }
-
-        // foreach (var p in particles) {
-        //     p.force = gravity * mass;
-        //     // foreach (var n in p.neighbors) {
-        //     //     p.force += GetSpringForce(GetDisplacement(p.GetPosition(), n.Key.GetPosition(), n.Value),
-        //     //             p.state.velocity, internalK, damping);
-        //     // }
-        // }
 
         foreach (var f in forces) {
             f.Apply();

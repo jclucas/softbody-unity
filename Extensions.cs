@@ -27,36 +27,37 @@ public static class Extensions {
     // }
 
 
-    public static ParticleState[] Derivative(this ParticleState[] state, Force f, float dt) {
+    public static Dictionary<Particle, ParticleState> Derivative(this Dictionary<Particle, ParticleState> state, Force f, float dt) {
 
-        var deriv = new ParticleState[state.Length];
+        var deriv = new Dictionary<Particle, ParticleState>();
         
-        for (var i = 0; i < state.Length; i++) {
-            deriv[i] = new ParticleState(state[i].particle);
-            deriv[i].force = f.eval(state[i].particle, state, dt);
-            deriv[i].velocity = state[i].velocity + deriv[i].force / deriv[i].particle.mass;
-            deriv[i].position = state[i].position + deriv[i].velocity;
+        foreach (var p in state.Keys) {
+            deriv.Add(p, new ParticleState());
+            deriv[p].force = f.eval(p, state, dt);
+            deriv[p].velocity = state[p].velocity + deriv[p].force / p.mass;
+            deriv[p].position = state[p].position + deriv[p].velocity;
         }
         
         return deriv;
 
     }
 
-    public static ParticleState[] IntegrateEuler(this ParticleState[] state, Force f, float dt) {
+    public static Dictionary<Particle, ParticleState> IntegrateEuler(this Dictionary<Particle, ParticleState> state, Force f, float dt) {
 
-        var newState = new ParticleState[state.Length];
+        var deriv = new Dictionary<Particle, ParticleState>();
         
-        for (var i = 0; i < state.Length; i++) {
-            newState[i] = new ParticleState(state[i].particle);
-            newState[i].force = f.eval(state[i].particle, state, dt);
-            newState[i].velocity = state[i].velocity + newState[i].force / newState[i].particle.mass * dt;
-            newState[i].position = state[i].position + newState[i].velocity * dt;
+        foreach (var p in state.Keys) {
+            deriv.Add(p, new ParticleState());
+            deriv[p].force = f.eval(p, state, dt);
+            deriv[p].velocity = state[p].velocity + deriv[p].force / p.mass * dt;
+            deriv[p].position = state[p].position + deriv[p].velocity * dt;
         }
         
-        return newState;
+        return deriv;
+
     }
 
-    public static ParticleState[] IntegrateMidpoint(this ParticleState[] state, Force f, float dt) {
+    public static Dictionary<Particle, ParticleState> IntegrateMidpoint(this Dictionary<Particle, ParticleState> state, Force f, float dt) {
         // var k1 = this.IntegrateEuler(f, dt/2);
         // return k1.IntegrateEuler(f, dt/2);v
         var dx = state.IntegrateEuler(f, dt/2);
@@ -64,7 +65,7 @@ public static class Extensions {
 
     }
 
-    public static ParticleState[] Integrate(this ParticleState[] state, Force f, float dt) {
+    public static Dictionary<Particle, ParticleState> Integrate(this Dictionary<Particle, ParticleState> state, Force f, float dt) {
         var k1 = state.IntegrateEuler(f, dt);
         var k2 = k1.IntegrateEuler(f, dt/2);
         var k3 = k2.IntegrateEuler(f, dt/2);
