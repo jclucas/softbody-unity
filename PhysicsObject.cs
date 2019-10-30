@@ -59,23 +59,28 @@ public class PhysicsObject : Object {
         }
 
         // add global forces
-        forces.Add(new Force((state, dt) => state.mass * gravity, particles));
+        forces.Add(new Force((p, state, dt) => p.mass * gravity, particles));
 
         // add edges
+        Force edges = new Force((p, state, dt) => {
+                Vector3 f = Vector3.zero;
+                foreach (var other in p.neighbors) {
+                    var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
+                    f += GetSpringForce(d, state[p].velocity, internalK, damping);
+                }
+                return f;
+        });
+
         for (int i = 0; i < mesh.triangles.Length; i += 3) {
             var a = map[mesh.vertices[mesh.triangles[i]]];
             var b = map[mesh.vertices[mesh.triangles[i + 1]]];
             var c = map[mesh.vertices[mesh.triangles[i + 2]]];
-            // a.AddEdge(ref b);
-            // a.AddEdge(ref c);
-            // b.AddEdge(ref a);
-            // b.AddEdge(ref c);
-            // c.AddEdge(ref a);
-            // c.AddEdge(ref b);
-            forces.Add(new BinaryForce((ParticleState state, ParticleState other, float dt) => {
-                var d = GetDisplacement(state.position, other.position, 2.0f);
-                return GetSpringForce(d, state.velocity, kInternal, damping);
-            }, a, b));
+            a.AddEdge(ref b);
+            a.AddEdge(ref c);
+            b.AddEdge(ref a);
+            b.AddEdge(ref c);
+            c.AddEdge(ref a);
+            c.AddEdge(ref b);
         }
 
         Debug.Log("All done :)");
