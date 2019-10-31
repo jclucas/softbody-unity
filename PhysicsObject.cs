@@ -14,8 +14,12 @@ public class PhysicsObject : MonoBehaviour {
 
     public float damping = 1;
 
+    public float temperature = 300;
+
     // constant for all physics objects
     public static Vector3 gravity = new Vector3(0, -9.81f, 0);
+
+    public static float gasConstant = 8.314f;
 
     public List<Force> forces = new List<Force>();
 
@@ -23,8 +27,13 @@ public class PhysicsObject : MonoBehaviour {
 
     private Mesh mesh;
 
-    // private
-    public List<Particle> particles = new List<Particle>();
+    private float volume;
+
+    // PARTICLES
+
+    private List<Particle> particles = new List<Particle>();
+
+    private Dictionary<int, Particle> vertexMap = new Dictionary<int, Particle>();
 
     // the floor
     private Plane floor = new Plane(Vector3.up, new Vector3(0, -3, 0));
@@ -33,6 +42,8 @@ public class PhysicsObject : MonoBehaviour {
     void Start() {
         
         mesh = GetComponent<MeshFilter>().mesh;
+        
+        volume = CalculateVolume(mesh.bounds);
 
         // set static values
         Particle.k = this.internalK;
@@ -55,6 +66,7 @@ public class PhysicsObject : MonoBehaviour {
         }
 
         // temporary map of vertex -> particle
+        // TODO try to remove this ?
         var map = new Dictionary<Vector3, Particle>();
 
         // add vertices
@@ -62,6 +74,9 @@ public class PhysicsObject : MonoBehaviour {
             var newParticle = new Particle(p.Key, mass, p.Value);
             particles.Add(newParticle);
             map.Add(p.Key, newParticle);
+            foreach (var i in p.Value) {
+                vertexMap.Add(i, newParticle);
+            }
         }
 
         // add global forces
@@ -102,10 +117,38 @@ public class PhysicsObject : MonoBehaviour {
         
         var vertices = mesh.vertices;
 
+        // apply all forces
         foreach (var f in forces) {
             f.Apply();
         }
 
+        // update volume
+        var bounds = new Bounds();
+
+        foreach (var p in particles) {
+            bounds.Encapsulate(p.state.position);
+        }
+
+        volume = CalculateVolume(bounds);
+
+        // get pressure
+        var pressure = CalculatePressure();
+
+        // apply to each triangle
+        for (int i = 0; i < mesh.triangles.Length; i += 3) {
+            var a = vertexMap[mesh.triangles[i]];
+            var b = vertexMap[mesh.triangles[i + 1]];
+            var c = vertexMap[mesh.triangles[i + 2]];
+            var n = Vector3.Cross(b.state.position - a.state.position, c.state.position - a.state.position);
+            var area = Vector3.Magnitude(n) / 2;
+            var p = pressure * n / 2;
+            a.force += p;
+            b.force += p;
+            c.force += p;
+        }
+        
+
+        // update geometry
         foreach (var p in particles) {
             p.UpdateMesh(ref vertices);
         }
@@ -165,6 +208,14 @@ public class PhysicsObject : MonoBehaviour {
         var actual = a - b;
         var displacement = Vector3.Magnitude(actual) - expected;
         return displacement * (actual / Vector3.Magnitude(actual));
+    }
+
+    public float CalculateVolume(Bounds b) {
+        return (b.max.x - b.min.x) * (b.max.y - b.min.y) * (b.max.z - b.min.z);
+    }
+
+    public float CalculatePressure() {
+        return gasConstant * temperature / volume;
     }
 
 }

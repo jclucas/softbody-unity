@@ -59,19 +59,33 @@ public static class Extensions {
 
     public static Dictionary<Particle, ParticleState> IntegrateMidpoint(this Dictionary<Particle, ParticleState> state, Force f, float dt) {
         // var k1 = this.IntegrateEuler(f, dt/2);
-        // return k1.IntegrateEuler(f, dt/2);v
+        // return k1.IntegrateEuler(f, dt/2);
         var dx = state.IntegrateEuler(f, dt/2);
-        return dx.IntegrateEuler(f, dt);
-
+        var integral = dx.IntegrateEuler(f, dt);
+        
+        foreach (var p in state.Keys) {
+            Debug.Log("midpoint = " + dx[p].force);
+            Debug.Log("integral = " + integral[p].force);
+        }
+        return integral;
     }
 
     public static Dictionary<Particle, ParticleState> Integrate(this Dictionary<Particle, ParticleState> state, Force f, float dt) {
-        var k1 = state.IntegrateEuler(f, dt);
-        var k2 = k1.IntegrateEuler(f, dt/2);
-        var k3 = k2.IntegrateEuler(f, dt/2);
-        var k4 = k3.IntegrateEuler(f, dt);
-        // return (k1 + k2 * 2 + k3 * 2 + k4) * (1/6);
-        return k4;
+        var k1 = state.Derivative(f, 0);
+        var k2 = k1.Derivative(f, dt/2);
+        var k3 = k2.Derivative(f, dt/2);
+        var k4 = k3.Derivative(f, dt);
+
+        var integral = new Dictionary<Particle, ParticleState>();
+        foreach (var p in state.Keys) {
+            integral[p] = (k1[p] + k2[p] * 2 + k3[p] * 2 + k4[p]) * (1/6) * dt;
+            Debug.Log("k1 = " + k1[p].force);
+            Debug.Log("k2 = " + k2[p].force);
+            Debug.Log("k3 = " + k3[p].force);
+            Debug.Log("k4 = " + k4[p].force);
+        }
+        return integral;
+        // return k4;
     }
 
 }
