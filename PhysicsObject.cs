@@ -146,7 +146,9 @@ public class PhysicsObject : MonoBehaviour {
             b.force += p;
             c.force += p;
         }
-        
+
+        var pressureForce = new Force((p, state, dt) => p.force, particles);
+        pressureForce.Apply();
 
         // update geometry
         foreach (var p in particles) {
@@ -156,47 +158,6 @@ public class PhysicsObject : MonoBehaviour {
         mesh.vertices = vertices;
 
     }
-
-    // UTILITY FUNCTIONS
-
-    // private Vector3 DetectCollisions(int i) {
-
-    //     // world space transform
-    //     var world = transform.TransformPoint(mesh.vertices[i]);
-
-    //     // CHEATING just don't let it go below the floor
-    //     if (world.y < 0) {
-
-    //         // back up to before collision
-    //         var surface = transform.InverseTransformPoint(new Vector3(world.x, 0, world.z));
-    //         var delta = mesh.vertices[i] - surface;
-
-    //         // calculate spring force
-    //         return getSpringForce(delta, velocity[i], collisionK, damping);
-
-    //     } else {
-    //         return Vector3.zero;
-    //     }
-
-    // }
-
-    // private Vector3 getEdgeForce(int i) {
-
-    //     Vector3 force = Vector3.zero;
-
-    //     foreach (int n in edges.GetNeighbors(i)) {
-
-    //         var F = getSpringForce(edges.GetDisplacement(i, n), velocity[n] - velocity[i], internalK, damping) / mass;
-    //         if (Vector3.Magnitude(F) > 0.01) {
-                
-    //             Debug.Log("Vertex " + i + " applying a force of " +  F + " to " + n);
-    //             force += F;
-    //         }
-    //     }
-
-    //     return force;
-
-    // }
 
     // k: spring constant
     // c: damping constant
