@@ -58,6 +58,12 @@ public class Particle {
         return ((-(1 + e) * (Vector3.Dot(this.velocity, n))) / (1/this.mass)) * n;
     }
 
+    // move position of particle to given plane along velocity
+    public void MoveToPlane(Plane p) {
+        var scale = (p.ClosestPointOnPlane(position).y - position.y) / velocity.y;
+        position += velocity.normalized * scale;
+    }
+
     // private Vector3 GetDisplacement(Particle other) {}
 
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

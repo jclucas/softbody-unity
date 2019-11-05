@@ -8,9 +8,11 @@ public class PhysicsObject : MonoBehaviour {
 
     public float mass = 1;
 
-    public float internalK = 50;
+    public float k = 50;
 
     public float damping = 1;
+
+    public float e = 0.5f;
 
     public float temperature = 300;
 
@@ -44,7 +46,7 @@ public class PhysicsObject : MonoBehaviour {
         volume = CalculateVolume(mesh.bounds);
 
         // set static values
-        Particle.k = this.internalK;
+        Particle.k = this.k;
         Particle.damping = this.damping;
 
         // TEMP set collision bounds
@@ -88,7 +90,7 @@ public class PhysicsObject : MonoBehaviour {
             Vector3 f = Vector3.zero;
             foreach (var other in state[p].neighbors) {
                 var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
-                f += GetSpringForce(d, state[p].velocity, internalK, damping);
+                f += GetSpringForce(d, state[p].velocity, k, damping);
             }
             return f;
         }, particles));
@@ -157,8 +159,8 @@ public class PhysicsObject : MonoBehaviour {
         // collision detection
         foreach (var p in particles) {
             if (p.CollidesPlane(floor)) {
-                var impulse = p.GetImpulsePlane(Vector3.up, 1);
-                // state[p].position = new Vector3(state[p].position.x, 0, state[p].position.z);
+                var impulse = p.GetImpulsePlane(Vector3.up, e);
+                p.MoveToPlane(floor);
                 p.velocity += impulse;
             } 
         }

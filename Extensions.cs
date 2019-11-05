@@ -28,6 +28,7 @@ public static class Extensions {
     }
 
     public static Particle[] Integrate(this Particle[] state, Force f, float dt) {
+        
         var k1 = state.Step(f, 0);
         var k2 = k1.Step(f, dt/2);
         var k3 = k2.Step(f, dt/2);
@@ -38,14 +39,10 @@ public static class Extensions {
             state[p].position = ((k1[p].position + (k2[p].position + k3[p].position) * 2 + k4[p].position) * (1f/6f));
             state[p].velocity = ((k1[p].velocity + (k2[p].velocity + k3[p].velocity) * 2 + k4[p].velocity) * (1f/6f));
             state[p].force = ((k1[p].force + (k2[p].force + k3[p].force) * 2 + k4[p].force) * (1f/6f));
-            // Debug.Log("k1 = " + k1[p].position);
-            // Debug.Log("k2 = " + k2[p].position);
-            // Debug.Log("k3 = " + k3[p].position);
-            // Debug.Log("k4 = " + k4[p].position);
-            Debug.Log("New position [p]: " + state[p].position);
         }
+
         return state;
-        // return k4;
+
     }
 
 }
