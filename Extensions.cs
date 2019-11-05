@@ -27,65 +27,75 @@ public static class Extensions {
     // }
 
 
-    public static Dictionary<Particle, ParticleState> Derivative(this Dictionary<Particle, ParticleState> state, Force f, float dt) {
+    public static ParticleState[] Derivative(this ParticleState[] state, Force f, float dt) {
 
-        var deriv = new Dictionary<Particle, ParticleState>();
+        var deriv = new ParticleState[state.Length];
         
-        foreach (var p in state.Keys) {
-            deriv.Add(p, new ParticleState());
-            deriv[p].force = f.eval(p, state, dt);
-            deriv[p].velocity = state[p].velocity + deriv[p].force / p.mass;
-            deriv[p].position = state[p].position + deriv[p].velocity;
+        for (int i = 0; i < state.Length; i++) {
+            deriv[i].force = f.eval(i, state, dt);
+            deriv[i].velocity = state[i].velocity + deriv[i].force / state[i].mass;
+            deriv[i].position = state[i].position + deriv[i].velocity;
         }
         
         return deriv;
 
     }
 
-    public static Dictionary<Particle, ParticleState> IntegrateEuler(this Dictionary<Particle, ParticleState> state, Force f, float dt) {
+    public static ParticleState[] Step(this ParticleState[] state, Force f, float dt) {
 
-        var deriv = new Dictionary<Particle, ParticleState>();
+        var deriv = new ParticleState[state.Length];
         
-        foreach (var p in state.Keys) {
-            deriv.Add(p, new ParticleState());
-            deriv[p].force = f.eval(p, state, dt);
-            deriv[p].velocity = state[p].velocity + deriv[p].force / p.mass * dt;
-            deriv[p].position = state[p].position + deriv[p].velocity * dt;
+        for (int i = 0; i < state.Length; i++) {
+            deriv[i] = new ParticleState(state[i].mass);
+            // step forward with current derivatives
+            deriv[i].position = state[i].position + state[i].velocity * dt;
+            deriv[i].velocity = state[i].velocity + state[i].force / state[i].mass * dt;
+            // calculate
+            deriv[i].force = f.eval(i, state, dt);
         }
         
         return deriv;
 
     }
 
-    public static Dictionary<Particle, ParticleState> IntegrateMidpoint(this Dictionary<Particle, ParticleState> state, Force f, float dt) {
-        // var k1 = this.IntegrateEuler(f, dt/2);
-        // return k1.IntegrateEuler(f, dt/2);
-        var dx = state.IntegrateEuler(f, dt/2);
-        var integral = dx.IntegrateEuler(f, dt);
-        
-        foreach (var p in state.Keys) {
-            Debug.Log("midpoint = " + dx[p].force);
-            Debug.Log("integral = " + integral[p].force);
-        }
-        return integral;
+    public static ParticleState[] IntegrateMidpoint(this ParticleState[] state, Force f, float dt) {
+        var k1 = state.Step(f, dt / 2);
+        return state.Step(f, dt);
     }
 
-    public static Dictionary<Particle, ParticleState> Integrate(this Dictionary<Particle, ParticleState> state, Force f, float dt) {
-        var k1 = state.Derivative(f, 0);
-        var k2 = k1.Derivative(f, dt/2);
-        var k3 = k2.Derivative(f, dt/2);
-        var k4 = k3.Derivative(f, dt);
+    // public static ParticleState[] IntegrateMidpoint(this ParticleState[] state, Force f, float dt) {
+    //     // var k1 = this.IntegrateEuler(f, dt/2);
+    //     // return k1.IntegrateEuler(f, dt/2);
+    //     var dx = state.IntegrateEuler(f, dt/2);
+    //     var integral = dx.IntegrateEuler(f, dt);
+        
+    //     foreach (var p in state.Keys) {
+    //         Debug.Log("midpoint = " + dx[p].force);
+    //         Debug.Log("integral = " + integral[p].force);
+    //     }
+    //     return integral;
+    // }
 
-        var integral = new Dictionary<Particle, ParticleState>();
-        foreach (var p in state.Keys) {
-            integral[p] = (k1[p] + k2[p] * 2 + k3[p] * 2 + k4[p]) * (1/6) * dt;
-            Debug.Log("k1 = " + k1[p].force);
-            Debug.Log("k2 = " + k2[p].force);
-            Debug.Log("k3 = " + k3[p].force);
-            Debug.Log("k4 = " + k4[p].force);
+    public static ParticleState[] Integrate(this ParticleState[] state, Force f, float dt) {
+        var k1 = state.Step(f, 0);
+        var k2 = k1.Step(f, dt/2);
+        var k3 = k2.Step(f, dt/2);
+        var k4 = k3.Step(f, dt);
+
+        var deriv = new ParticleState[state.Length];
+        for (int p = 0; p < state.Length; p++) {
+            deriv[p] = (k1[p] + (k2[p] + k3[p]) * 2 + k4[p]);
+            deriv[p] *= (1f/6f);
+            deriv[p] *= dt;
+            Debug.Log("k1 = " + k1[p].position);
+            Debug.Log("k2 = " + k2[p].position);
+            Debug.Log("k3 = " + k3[p].position);
+            Debug.Log("k4 = " + k4[p].position);
+            Debug.Log("result = " + deriv[p].position);
+            state[p] += deriv[p];
         }
-        return integral;
-        // return k4;
+        // return state;
+        return k4;
     }
 
 }

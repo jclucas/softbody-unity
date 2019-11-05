@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class Force {
 
-    public delegate Vector3 EvalFunction(Particle particle, Dictionary<Particle, ParticleState> state, float dt);
+    public delegate Vector3 EvalFunction(int particle, ParticleState[] state, float dt);
 
     // evaluation function
     public EvalFunction eval;
@@ -22,13 +22,13 @@ public class Force {
     }
 
     public void Apply() {
-        Dictionary<Particle, ParticleState> newState = new Dictionary<Particle, ParticleState>();
-        foreach (var p in particles) {
-            newState.Add(p, p.state);
+        var newState = new ParticleState[particles.Count];
+        for (var i = 0; i < particles.Count; i++) {
+            newState[i] = particles[i].state;
         }
-        newState = newState.IntegrateMidpoint(this, Time.fixedDeltaTime);
-        foreach (var p in particles) {
-            p.state = newState[p];
+        newState = newState.Integrate(this, Time.fixedDeltaTime);
+        for (var i = 0; i < particles.Count; i++) {
+            particles[i].state = newState[i];
         }
     }
 
