@@ -9,15 +9,15 @@ public class Force {
     public EvalFunction eval;
 
     // particles to apply it to
-    public List<Particle> particles;
+    public Particle[] particles;
 
-    public Force(EvalFunction eval, List<Particle> particles) {
+    public Force(EvalFunction eval, Particle[] particles) {
         this.eval = eval;
         this.particles = particles;
     }
 
     public void Apply() {
-        particles = new List<Particle>(particles.ToArray().Integrate(this, Time.fixedDeltaTime));
+        particles = particles.Integrate(this, Time.fixedDeltaTime);
     }
 
 }

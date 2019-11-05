@@ -10,8 +10,6 @@ public class PhysicsObject : MonoBehaviour {
 
     public float internalK = 50;
 
-    public float collisionK = 1000;
-
     public float damping = 1;
 
     public float temperature = 300;
@@ -31,7 +29,7 @@ public class PhysicsObject : MonoBehaviour {
 
     // PARTICLES
 
-    private List<Particle> particles = new List<Particle>();
+    private Particle[] particles;
 
     private Dictionary<int, Particle> vertexMap = new Dictionary<int, Particle>();
 
@@ -66,48 +64,54 @@ public class PhysicsObject : MonoBehaviour {
         }
 
         // temporary map of vertex -> particle
-        // TODO try to remove this ?
         var map = new Dictionary<Vector3, Particle>();
 
         // add vertices
+        var particleList = new List<Particle>();
+        
         foreach (var p in points) {
             var newParticle = new Particle(p.Key, mass, p.Value);
-            particles.Add(newParticle);
+            particleList.Add(newParticle);
             map.Add(p.Key, newParticle);
             foreach (var i in p.Value) {
                 vertexMap.Add(i, newParticle);
             }
         }
 
+        particles = particleList.ToArray();
+
         // add global forces
         forces.Add(new Force((p, state, dt) => state[p].mass * gravity, particles));
-        forces.Add(new Force((p, state, dt) => {
-            if (state[p].CollidesPlane(floor)) {
-                return state[p].GetImpulsePlane(Vector3.up, 1) / dt;
-            }
-            return Vector3.zero;
-        }, particles));
 
         // add edges
         forces.Add(new Force((p, state, dt) => {
             Vector3 f = Vector3.zero;
             foreach (var other in state[p].neighbors) {
-                var d = GetDisplacement(state[p].position, other.Key.position, other.Value);
+                var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
                 f += GetSpringForce(d, state[p].velocity, internalK, damping);
             }
             return f;
         }, particles));
 
-        for (int i = 0; i < mesh.triangles.Length; i += 3) {
-            var a = map[mesh.vertices[mesh.triangles[i]]];
-            var b = map[mesh.vertices[mesh.triangles[i + 1]]];
-            var c = map[mesh.vertices[mesh.triangles[i + 2]]];
-            a.AddEdge(ref b);
-            a.AddEdge(ref c);
-            b.AddEdge(ref a);
-            b.AddEdge(ref c);
-            c.AddEdge(ref a);
-            c.AddEdge(ref b);
+        // for (int i = 0; i < mesh.triangles.Length; i += 3) {
+        //     var a = map[mesh.vertices[mesh.triangles[i]]];
+        //     var b = map[mesh.vertices[mesh.triangles[i + 1]]];
+        //     var c = map[mesh.vertices[mesh.triangles[i + 2]]];
+        //     a.AddEdge(ref b);
+        //     a.AddEdge(ref c);
+        //     b.AddEdge(ref a);
+        //     b.AddEdge(ref c);
+        //     c.AddEdge(ref a);
+        //     c.AddEdge(ref b);
+        // }
+
+        // connect all particles for cube
+        for (int i = 0; i < particles.Length; i++) {
+            for (int j = 0; j < particles.Length; j++) {
+                if (i != j) {
+                    particles[i].AddEdge(j, ref particles[j]);
+                }
+            }
         }
 
     }
@@ -123,32 +127,41 @@ public class PhysicsObject : MonoBehaviour {
         }
 
         // update volume
-        var bounds = new Bounds();
+        // var bounds = new Bounds();
 
+        // foreach (var p in particles) {
+        //     bounds.Encapsulate(p.position);
+        // }
+
+        // volume = CalculateVolume(bounds);
+
+        // // get pressure
+        // var pressure = CalculatePressure();
+
+        // // apply to each triangle
+        // for (int i = 0; i < mesh.triangles.Length; i += 3) {
+        //     var a = vertexMap[mesh.triangles[i]];
+        //     var b = vertexMap[mesh.triangles[i + 1]];
+        //     var c = vertexMap[mesh.triangles[i + 2]];
+        //     var n = Vector3.Cross(b.position - a.position, c.position - a.position);
+        //     var area = Vector3.Magnitude(n) / 2;
+        //     var p = pressure * n / 2;
+        //     a.force += p;
+        //     b.force += p;
+        //     c.force += p;
+        // }
+
+        // var pressureForce = new Force((p, state, dt) => state[p].force, particles);
+        // pressureForce.Apply();
+
+        // collision detection
         foreach (var p in particles) {
-            bounds.Encapsulate(p.position);
+            if (p.CollidesPlane(floor)) {
+                var impulse = p.GetImpulsePlane(Vector3.up, 1);
+                // state[p].position = new Vector3(state[p].position.x, 0, state[p].position.z);
+                p.velocity += impulse;
+            } 
         }
-
-        volume = CalculateVolume(bounds);
-
-        // get pressure
-        var pressure = CalculatePressure();
-
-        // apply to each triangle
-        for (int i = 0; i < mesh.triangles.Length; i += 3) {
-            var a = vertexMap[mesh.triangles[i]];
-            var b = vertexMap[mesh.triangles[i + 1]];
-            var c = vertexMap[mesh.triangles[i + 2]];
-            var n = Vector3.Cross(b.position - a.position, c.position - a.position);
-            var area = Vector3.Magnitude(n) / 2;
-            var p = pressure * n / 2;
-            a.force += p;
-            b.force += p;
-            c.force += p;
-        }
-
-        var pressureForce = new Force((p, state, dt) => state[p].force, particles);
-        pressureForce.Apply();
 
         // update geometry
         foreach (var p in particles) {

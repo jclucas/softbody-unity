@@ -16,7 +16,7 @@ public class Particle {
     public static float damping = 0;
 
     // Adjacency list
-    public Dictionary<Particle, float> neighbors;
+    public Dictionary<int, float> neighbors;
 
     public Particle(Vector3 position, float mass, List<int> vertices) {
         this.vertices = vertices;
@@ -24,7 +24,7 @@ public class Particle {
         this.velocity = Vector3.zero;
         this.force = Vector3.zero;
         this.mass = mass;
-        neighbors = new Dictionary<Particle, float>();
+        neighbors = new Dictionary<int, float>();
     }
 
     public void SetState(ParticleState state) {
@@ -33,9 +33,9 @@ public class Particle {
         this.force = state.force;
     }
 
-    public void AddEdge(ref Particle other) {
-        if (!neighbors.ContainsKey(other)) {
-            neighbors.Add(other, GetDistance(other));
+    public void AddEdge(int index, ref Particle other) {
+        if (!neighbors.ContainsKey(index)) {
+            neighbors.Add(index, GetDistance(other));
         }
     }
 
