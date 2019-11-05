@@ -64,8 +64,6 @@ public class Particle {
         position += velocity.normalized * scale;
     }
 
-    // private Vector3 GetDisplacement(Particle other) {}
-
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // !! warning.. assumes a.particle == b.particle !!
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -85,7 +83,8 @@ public class Particle {
 
 }
 
-public class ParticleState {
+// struct of state variables for integration
+public struct ParticleState {
 
     public Vector3 position;
     public Vector3 velocity;
