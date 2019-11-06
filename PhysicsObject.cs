@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class PhysicsObject : MonoBehaviour {
@@ -22,6 +21,8 @@ public class PhysicsObject : MonoBehaviour {
     // GEOMETRY
 
     private Mesh mesh;
+
+    private int dim;
 
     // PARTICLES
 
@@ -61,18 +62,25 @@ public class PhysicsObject : MonoBehaviour {
         var map = new Dictionary<Vector3, Particle>();
 
         // add vertices
-        var particleList = new List<Particle>();
-        
-        foreach (var p in points) {
-            var newParticle = new Particle(p.Key, mass, p.Value);
-            particleList.Add(newParticle);
-            map.Add(p.Key, newParticle);
-            foreach (var i in p.Value) {
-                vertexMap.Add(i, newParticle);
+        dim = 2;
+        var step = 1;
+        particles = new Particle[dim * dim * dim];
+
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                for (int k = 0; k < 2; k++) {
+
+                    var p = new Vector3(-0.5f + step * i, -0.5f + step * j, -0.5f + step * k);
+                    var newParticle = new Particle(p, mass, points[p]);
+                    particles[GetArrayIndex(i, j, k)] = newParticle;
+                    map.Add(p, newParticle);
+                    foreach (var v in points[p]) {
+                        vertexMap.Add(v, newParticle);
+                    }
+                    
+                }
             }
         }
-
-        particles = particleList.ToArray();
 
         // add global forces
         forces.Add(new Force((p, state, dt) => state[p].mass * gravity, particles));
@@ -136,6 +144,10 @@ public class PhysicsObject : MonoBehaviour {
         var actual = a - b;
         var displacement = Vector3.Magnitude(actual) - expected;
         return displacement * (actual / Vector3.Magnitude(actual));
+    }
+
+    private int GetArrayIndex(int x, int y, int z) {
+        return ((x * dim) + y) * dim + z; 
     }
 
 }
