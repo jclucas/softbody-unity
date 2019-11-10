@@ -13,6 +13,8 @@ public class PhysicsObject : MonoBehaviour {
 
     public float e = 0.5f;
 
+    public int subdiv = 0;
+
     // constant for all physics objects
     public static Vector3 gravity = new Vector3(0, -9.81f, 0);
 
@@ -36,7 +38,7 @@ public class PhysicsObject : MonoBehaviour {
     // Start is called before the first frame update
     void Start() {
         
-        mesh = GetComponent<MeshFilter>().mesh;
+        // mesh = GetComponent<MeshFilter>().mesh;
 
         // set static values
         Particle.k = this.k;
@@ -45,42 +47,12 @@ public class PhysicsObject : MonoBehaviour {
         // set collision bounds
         floor = new Plane(Vector3.up, transform.InverseTransformPoint(Vector3.zero));
 
-        // construct dictionary of same points
-        var points = new Dictionary<Vector3, List<int>>();
-
-        for (var i = 0; i < mesh.vertexCount; i++) {
-
-            if (!points.ContainsKey(mesh.vertices[i])) {
-                points.Add(mesh.vertices[i], new List<int>());
-            } 
-
-            points[mesh.vertices[i]].Add(i);
-
-        }
+        dim = 2 + subdiv;
+        particles = new Particle[dim * dim * dim];
+        CreateCube();
 
         // temporary map of vertex -> particle
         var map = new Dictionary<Vector3, Particle>();
-
-        // add vertices
-        dim = 2;
-        var step = 1;
-        particles = new Particle[dim * dim * dim];
-
-        for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < 2; j++) {
-                for (int k = 0; k < 2; k++) {
-
-                    var p = new Vector3(-0.5f + step * i, -0.5f + step * j, -0.5f + step * k);
-                    var newParticle = new Particle(p, mass, points[p]);
-                    particles[GetArrayIndex(i, j, k)] = newParticle;
-                    map.Add(p, newParticle);
-                    foreach (var v in points[p]) {
-                        vertexMap.Add(v, newParticle);
-                    }
-                    
-                }
-            }
-        }
 
         // add global forces
         forces.Add(new Force((p, state, dt) => state[p].mass * gravity, particles));
@@ -148,6 +120,114 @@ public class PhysicsObject : MonoBehaviour {
 
     private int GetArrayIndex(int x, int y, int z) {
         return ((x * dim) + y) * dim + z; 
+    }
+
+    private void CreateCube() {
+
+        var step = 1f / (subdiv + 1);
+        
+        // construct dictionary of same points
+        var points = new Dictionary<Vector3, List<int>>();
+
+        var vertices = new Vector3[6 * dim * dim];
+        var triangles = new int[36 * (dim - 1) * (dim - 1)];
+        var uvs = new Vector2[6 * dim * dim];
+        var idx = new int[6];
+
+        // generate verts for each face
+
+        for (int i = 0; i < dim; i++) {
+
+            for (int j = 0; j < dim; j++) {
+
+                var u = -0.5f + i * step;
+                var v = -0.5f + j * step;
+
+                var xPos = new Vector3(0.5f, u, v);
+                var xNeg = new Vector3(-0.5f, u, v);
+                var yPos = new Vector3(u, 0.5f, v);
+                var yNeg = new Vector3(u, -0.5f, v);
+                var zPos = new Vector3(u, v, 0.5f);
+                var zNeg = new Vector3(u, v, -0.5f);
+
+                for (int face = 0; face < 6; face++) {
+                    idx[face] = face * dim * dim + i * dim + j;
+                    uvs[idx[face]] = new Vector2(u, v);
+                }
+
+                vertices[idx[0]] = xPos;
+                vertices[idx[1]] = xNeg;
+                vertices[idx[2]] = yPos;
+                vertices[idx[3]] = yNeg;
+                vertices[idx[4]] = zPos;
+                vertices[idx[5]] = zNeg;
+
+            }
+
+        }
+
+        // generate triangles for each face
+
+        var index = new int[6, 4];
+
+        for (int i = 0; i < dim - 1; i++) {
+
+            for (int j = 0; j < dim - 1; j++) {
+
+                // 4 adjacent vertices
+                for (int face = 0; face < 6; face++) {
+                    index[face, 0] = face * dim * dim + i * dim + j;
+                    index[face, 1] = face * dim * dim + i * dim + j + 1;
+                    index[face, 2] = face * dim * dim + (i + 1) * dim + j;
+                    index[face, 3] = face * dim * dim + (i + 1) * dim + j + 1;
+                }
+
+                for (int face = 0; face < 6; face++) {
+
+                    var faceOffset = face * 6 * (dim - 1) * (dim - 1);
+
+                    if (face == 0 || face == 3 || face == 4) {
+                        triangles[faceOffset + 6 * (i * (dim - 1) + j)] = index[face, 2];
+                        triangles[faceOffset + 6 * (i * (dim - 1) + j) + 1] = index[face, 1];
+                        triangles[faceOffset + 6 * (i * (dim - 1) + j) + 2] = index[face, 0];
+                        triangles[faceOffset + 6 * (i * (dim - 1) + j) + 3] = index[face, 1];
+                        triangles[faceOffset + 6 * (i * (dim - 1) + j) + 4] = index[face, 2];
+                        triangles[faceOffset + 6 * (i * (dim - 1) + j) + 5] = index[face, 3];
+                    } else {
+                        triangles[faceOffset + 6 * (i * (dim - 1) + j)] = index[face, 0];
+                        triangles[faceOffset + 6 * (i * (dim - 1) + j) + 1] = index[face, 1];
+                        triangles[faceOffset + 6 * (i * (dim - 1) + j) + 2] = index[face, 2];
+                        triangles[faceOffset + 6 * (i * (dim - 1) + j) + 3] = index[face, 3];
+                        triangles[faceOffset + 6 * (i * (dim - 1) + j) + 4] = index[face, 2];
+                        triangles[faceOffset + 6 * (i * (dim - 1) + j) + 5] = index[face, 1];
+                    }
+                        
+                }
+
+            }
+
+        }
+
+        // create mesh
+        mesh = new Mesh();
+        mesh.vertices = vertices;
+        mesh.triangles = triangles;
+        mesh.uv = uvs;
+
+        // attach mesh to game object
+        GetComponent<MeshFilter>().mesh = mesh;
+
+        // interior particles (not in mesh)
+        // for (int i = 0; i < 2; i++) {
+        //     for (int j = 0; j < 2; j++) {
+        //         for (int k = 0; k < 2; k++) {
+
+        //             var p = new Vector3(-0.5f + step * i, -0.5f + step * j, -0.5f + step * k);
+        //             particles[GetArrayIndex(i, j, k)] = new Particle(p, mass, points[p]);
+        //         }
+        //     }
+        // }
+
     }
 
 }
