@@ -54,7 +54,7 @@ public class PhysicsObject : MonoBehaviour {
         // add global forces
         forces.Add(new Force((p, state, dt) => state[p].mass * gravity, particles));
 
-        // add edges
+        // add spring force
         forces.Add(new Force((p, state, dt) => {
             Vector3 f = Vector3.zero;
             foreach (var other in state[p].neighbors) {
@@ -63,15 +63,6 @@ public class PhysicsObject : MonoBehaviour {
             }
             return f;
         }, particles));
-
-        // connect all particles for cube
-        for (int i = 0; i < particles.Length; i++) {
-            for (int j = 0; j < particles.Length; j++) {
-                if (i != j) {
-                    particles[i].AddEdge(j, ref particles[j]);
-                }
-            }
-        }
 
     }
 
@@ -110,6 +101,9 @@ public class PhysicsObject : MonoBehaviour {
     }
 
     public Vector3 GetDisplacement(Vector3 a, Vector3 b, float expected) {
+        if (a == b) {
+            return Vector3.zero;
+        }
         var actual = a - b;
         var displacement = Vector3.Magnitude(actual) - expected;
         return displacement * (actual / Vector3.Magnitude(actual));
@@ -223,19 +217,6 @@ public class PhysicsObject : MonoBehaviour {
         GetComponent<MeshFilter>().mesh = mesh;
 
         // create particles
-
-        // corners
-        Vector3[] corners = {
-            new Vector3(-0.5f, -0.5f, -0.5f),
-            new Vector3(-0.5f, -0.5f, 0.5f),
-            new Vector3(-0.5f, 0.5f, -0.5f),
-            new Vector3(-0.5f, 0.5f, 0.5f),
-            new Vector3(0.5f, -0.5f, -0.5f),
-            new Vector3(0.5f, -0.5f, 0.5f),
-            new Vector3(0.5f, 0.5f, -0.5f),
-            new Vector3(0.5f, 0.5f, 0.5f)
-        };
-
         for (int i = 0; i < dim; i++) {
             for (int j = 0; j < dim; j++) {
                 for (int k = 0; k < dim; k++) {
@@ -246,6 +227,41 @@ public class PhysicsObject : MonoBehaviour {
             }
         }
 
+        // connect all particles in sub-cube
+        for (int i = 0; i < dim - 1; i++) {
+            for (int j = 0; j < dim - 1; j++) {
+                for (int k = 0; k < dim - 1; k++) {
+
+                    int[] sub = {
+                        GetArrayIndex(i, j, k),
+                        GetArrayIndex(i, j, k + 1),
+                        GetArrayIndex(i, j + 1, k),
+                        GetArrayIndex(i, j + 1, k + 1),
+                        GetArrayIndex(i + 1, j, k),
+                        GetArrayIndex(i + 1, j, k + 1),
+                        GetArrayIndex(i + 1, j + 1, k),
+                        GetArrayIndex(i + 1, j + 1, k + 1),
+                        
+                    };
+
+                    for (int u = 0; u < sub.Length; u++) {
+                        for (int v = 0; v < sub.Length; v++) {
+                            if (u == v) {
+                                continue;
+                            }
+                            AddDoubleEdge(sub[u], sub[v]);
+                        }
+                    }
+                
+                }
+            }
+        }
+
+    }
+
+    private void AddDoubleEdge(int p1, int p2) {
+        particles[p1].AddEdge(p2, ref particles[p2]);
+        particles[p2].AddEdge(p1, ref particles[p1]);
     }
 
 }
