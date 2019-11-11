@@ -51,9 +51,6 @@ public class PhysicsObject : MonoBehaviour {
         particles = new Particle[dim * dim * dim];
         CreateCube();
 
-        // temporary map of vertex -> particle
-        var map = new Dictionary<Vector3, Particle>();
-
         // add global forces
         forces.Add(new Force((p, state, dt) => state[p].mass * gravity, particles));
 
@@ -143,24 +140,32 @@ public class PhysicsObject : MonoBehaviour {
                 var u = -0.5f + i * step;
                 var v = -0.5f + j * step;
 
-                var xPos = new Vector3(0.5f, u, v);
-                var xNeg = new Vector3(-0.5f, u, v);
-                var yPos = new Vector3(u, 0.5f, v);
-                var yNeg = new Vector3(u, -0.5f, v);
-                var zPos = new Vector3(u, v, 0.5f);
-                var zNeg = new Vector3(u, v, -0.5f);
+                Vector3[] pts = {
+                    new Vector3(0.5f, u, v),    // +x
+                    new Vector3(-0.5f, u, v),   // -x
+                    new Vector3(u, 0.5f, v),    // +y
+                    new Vector3(u, -0.5f, v),   // -y
+                    new Vector3(u, v, 0.5f),    // +z
+                    new Vector3(u, v, -0.5f)    // -z
+                };
 
                 for (int face = 0; face < 6; face++) {
                     idx[face] = face * dim * dim + i * dim + j;
                     uvs[idx[face]] = new Vector2(u, v);
                 }
 
-                vertices[idx[0]] = xPos;
-                vertices[idx[1]] = xNeg;
-                vertices[idx[2]] = yPos;
-                vertices[idx[3]] = yNeg;
-                vertices[idx[4]] = zPos;
-                vertices[idx[5]] = zNeg;
+                for (int face = 0; face < 6; face++) {
+
+                    vertices[idx[face]] = pts[face];
+
+                    // add to vector3 -> vertex map
+                    if (!points.ContainsKey(pts[face])) {
+                        points.Add(pts[face], new List<int>());
+                    }
+
+                    points[pts[face]].Add(idx[face]);
+
+                }
 
             }
 
@@ -217,16 +222,29 @@ public class PhysicsObject : MonoBehaviour {
         // attach mesh to game object
         GetComponent<MeshFilter>().mesh = mesh;
 
-        // interior particles (not in mesh)
-        // for (int i = 0; i < 2; i++) {
-        //     for (int j = 0; j < 2; j++) {
-        //         for (int k = 0; k < 2; k++) {
+        // create particles
 
-        //             var p = new Vector3(-0.5f + step * i, -0.5f + step * j, -0.5f + step * k);
-        //             particles[GetArrayIndex(i, j, k)] = new Particle(p, mass, points[p]);
-        //         }
-        //     }
-        // }
+        // corners
+        Vector3[] corners = {
+            new Vector3(-0.5f, -0.5f, -0.5f),
+            new Vector3(-0.5f, -0.5f, 0.5f),
+            new Vector3(-0.5f, 0.5f, -0.5f),
+            new Vector3(-0.5f, 0.5f, 0.5f),
+            new Vector3(0.5f, -0.5f, -0.5f),
+            new Vector3(0.5f, -0.5f, 0.5f),
+            new Vector3(0.5f, 0.5f, -0.5f),
+            new Vector3(0.5f, 0.5f, 0.5f)
+        };
+
+        for (int i = 0; i < dim; i++) {
+            for (int j = 0; j < dim; j++) {
+                for (int k = 0; k < dim; k++) {
+                    var p = new Vector3(-0.5f + step * i, -0.5f + step * j, -0.5f + step * k);
+                    var vertexList = points.ContainsKey(p) ? points[p] : new List<int>();
+                    particles[GetArrayIndex(i, j, k)] = new Particle(p, mass, vertexList);
+                }
+            }
+        }
 
     }
 
