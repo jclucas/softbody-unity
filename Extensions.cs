@@ -34,13 +34,6 @@ public static class Extensions {
         var k3 = k2.Step(f, dt/2);
         var k4 = k3.Step(f, dt);
 
-        for (int p = 0; p < state.Length; p++) {
-            Debug.Log("Position [p]: " + state[p].position);
-            state[p].position = ((k1[p].position + (k2[p].position + k3[p].position) * 2 + k4[p].position) * (1f/6f));
-            state[p].velocity = ((k1[p].velocity + (k2[p].velocity + k3[p].velocity) * 2 + k4[p].velocity) * (1f/6f));
-            state[p].force = ((k1[p].force + (k2[p].force + k3[p].force) * 2 + k4[p].force) * (1f/6f));
-        }
-
         return state;
 
     }

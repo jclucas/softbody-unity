@@ -81,7 +81,7 @@ public class PhysicsObject : MonoBehaviour {
             if (p.CollidesPlane(floor)) {
                 var impulse = p.GetImpulsePlane(Vector3.up, e);
                 p.MoveToPlane(floor);
-                p.velocity += impulse;
+                p.velocity += impulse / mass;
             } 
         }
 
@@ -94,8 +94,6 @@ public class PhysicsObject : MonoBehaviour {
 
     }
 
-    // k: spring constant
-    // c: damping constant
     private static Vector3 GetSpringForce(Vector3 d, Vector3 v, float k, float c) {
         return (d * k * -1) - (c * v);
     }
@@ -166,7 +164,6 @@ public class PhysicsObject : MonoBehaviour {
         }
 
         // generate triangles for each face
-
         var index = new int[6, 4];
 
         for (int i = 0; i < dim - 1; i++) {
