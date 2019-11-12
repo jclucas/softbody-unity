@@ -72,8 +72,7 @@ public class Particle {
 
     // move position of particle to given plane along velocity
     public void MoveToPlane(Plane p) {
-        var scale = (p.ClosestPointOnPlane(position).y - position.y) / velocity.y;
-        position += velocity.normalized * scale;
+        position += Vector3.Project(p.ClosestPointOnPlane(position) - position, velocity);
     }
 
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
