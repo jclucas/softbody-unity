@@ -162,9 +162,7 @@ public class PhysicsObject : MonoBehaviour {
     }
 
     public Vector3 GetRelativeVelocity(Particle a, Particle b) {
-        var v = a.velocity - b.velocity;
-        var p = (a.position - b.position).normalized;
-        return new Vector3(v.x * p.x, v.y * p.y, v.z * p.z);
+        return Vector3.Project(a.velocity - b.velocity, a.position - b.position);
     }
 
     private int GetArrayIndex(int x, int y, int z) {
