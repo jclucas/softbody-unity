@@ -64,7 +64,8 @@ public class PhysicsObject : MonoBehaviour {
             Vector3 f = Vector3.zero;
             foreach (var other in state[p].structural) {
                 var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
-                f += GetSpringForce(d, state[p].velocity, stiffness, damping);
+                var v = GetRelativeVelocity(state[p], state[other.Key]);
+                f += GetSpringForce(d, v, stiffness, damping);
             }
             return f;
         }, particles));
@@ -73,7 +74,8 @@ public class PhysicsObject : MonoBehaviour {
             Vector3 f = Vector3.zero;
             foreach (var other in state[p].shear) {
                 var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
-                f += GetSpringForce(d, state[p].velocity, shearStiffness, shearDamping);
+                var v = GetRelativeVelocity(state[p], state[other.Key]);
+                f += GetSpringForce(d, v, shearStiffness, shearDamping);
             }
             return f;
         }, particles));
@@ -82,7 +84,8 @@ public class PhysicsObject : MonoBehaviour {
             Vector3 f = Vector3.zero;
             foreach (var other in state[p].bend) {
                 var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
-                f += GetSpringForce(d, state[p].velocity, bendStiffness, bendDamping);
+                var v = GetRelativeVelocity(state[p], state[other.Key]);
+                f += GetSpringForce(d, v, bendStiffness, bendDamping);
             }
             return f;
         }, particles));
@@ -156,6 +159,12 @@ public class PhysicsObject : MonoBehaviour {
         var actual = a - b;
         var displacement = Vector3.Magnitude(actual) - expected;
         return displacement * (actual / Vector3.Magnitude(actual));
+    }
+
+    public Vector3 GetRelativeVelocity(Particle a, Particle b) {
+        var v = a.velocity - b.velocity;
+        var p = (a.position - b.position).normalized;
+        return new Vector3(v.x * p.x, v.y * p.y, v.z * p.z);
     }
 
     private int GetArrayIndex(int x, int y, int z) {
