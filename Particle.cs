@@ -11,12 +11,10 @@ public class Particle {
     public Vector3 force;
     public float mass;
 
-    public static float k = 1;
-    
-    public static float damping = 0;
-
     // Adjacency list
-    public Dictionary<int, float> neighbors;
+    public Dictionary<int, float> structural;
+    public Dictionary<int, float> shear;
+    public Dictionary<int, float> bend;
 
     public Particle(Vector3 position, float mass, List<int> vertices) {
         this.vertices = vertices;
@@ -24,7 +22,9 @@ public class Particle {
         this.velocity = Vector3.zero;
         this.force = Vector3.zero;
         this.mass = mass;
-        neighbors = new Dictionary<int, float>();
+        structural = new Dictionary<int, float>();
+        shear = new Dictionary<int, float>();
+        bend = new Dictionary<int, float>();
     }
 
     public void SetState(ParticleState state) {
@@ -33,9 +33,21 @@ public class Particle {
         this.force = state.force;
     }
 
-    public void AddEdge(int index, ref Particle other) {
-        if (!neighbors.ContainsKey(index)) {
-            neighbors.Add(index, GetDistance(other));
+    public void AddStructuralSpring(int index, ref Particle other) {
+        if (!structural.ContainsKey(index)) {
+            structural.Add(index, GetDistance(other));
+        }
+    }
+
+    public void AddShearSpring(int index, ref Particle other) {
+        if (!shear.ContainsKey(index)) {
+            shear.Add(index, GetDistance(other));
+        }
+    }
+
+    public void AddBendSpring(int index, ref Particle other) {
+        if (!bend.ContainsKey(index)) {
+            bend.Add(index, GetDistance(other));
         }
     }
 

@@ -7,9 +7,17 @@ public class PhysicsObject : MonoBehaviour {
 
     public float mass = 1;
 
-    public float k = 50;
+    public float stiffness = 50;
 
     public float damping = 1;
+
+    public float shearStiffness = 50;
+
+    public float shearDamping = 1;
+
+    public float bendStiffness = 50;
+
+    public float bendDamping = 1;
 
     public float e = 0.5f;
 
@@ -26,9 +34,11 @@ public class PhysicsObject : MonoBehaviour {
 
     private int dim;
 
+    private float step;
+
     // PARTICLES
 
-    private Particle[] particles;
+    public Particle[] particles;
 
     private Dictionary<int, Particle> vertexMap = new Dictionary<int, Particle>();
 
@@ -37,29 +47,42 @@ public class PhysicsObject : MonoBehaviour {
 
     // Start is called before the first frame update
     void Start() {
-        
-        // mesh = GetComponent<MeshFilter>().mesh;
-
-        // set static values
-        Particle.k = this.k;
-        Particle.damping = this.damping;
 
         // set collision bounds
         floor = new Plane(Vector3.up, transform.InverseTransformPoint(Vector3.zero));
 
         dim = 2 + subdiv;
+        step = 1f / (subdiv + 1);
         particles = new Particle[dim * dim * dim];
         CreateCube();
 
         // add global forces
         forces.Add(new Force((p, state, dt) => state[p].mass * gravity, particles));
 
-        // add spring force
+        // add spring forces
         forces.Add(new Force((p, state, dt) => {
             Vector3 f = Vector3.zero;
-            foreach (var other in state[p].neighbors) {
+            foreach (var other in state[p].structural) {
                 var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
-                f += GetSpringForce(d, state[p].velocity, k, damping);
+                f += GetSpringForce(d, state[p].velocity, stiffness, damping);
+            }
+            return f;
+        }, particles));
+
+        forces.Add(new Force((p, state, dt) => {
+            Vector3 f = Vector3.zero;
+            foreach (var other in state[p].shear) {
+                var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
+                f += GetSpringForce(d, state[p].velocity, shearStiffness, shearDamping);
+            }
+            return f;
+        }, particles));
+
+        forces.Add(new Force((p, state, dt) => {
+            Vector3 f = Vector3.zero;
+            foreach (var other in state[p].bend) {
+                var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
+                f += GetSpringForce(d, state[p].velocity, bendStiffness, bendDamping);
             }
             return f;
         }, particles));
@@ -94,6 +117,34 @@ public class PhysicsObject : MonoBehaviour {
 
     }
 
+    void OnDrawGizmos() {
+
+        Gizmos.color = Color.green;
+
+        foreach (var p in particles) {
+            foreach (var n in p.structural) {
+                Gizmos.DrawLine(transform.TransformPoint(p.position), transform.TransformPoint(particles[n.Key].position));
+            }
+        }
+
+        Gizmos.color = Color.yellow;
+
+        foreach (var p in particles) {
+            foreach (var n in p.shear) {
+                Gizmos.DrawLine(transform.TransformPoint(p.position), transform.TransformPoint(particles[n.Key].position));
+            }
+        }
+
+        Gizmos.color = Color.blue;
+
+        foreach (var p in particles) {
+            foreach (var n in p.bend) {
+                Gizmos.DrawLine(transform.TransformPoint(p.position), transform.TransformPoint(particles[n.Key].position));
+            }
+        }
+
+    }
+
     private static Vector3 GetSpringForce(Vector3 d, Vector3 v, float k, float c) {
         return (d * k * -1) - (c * v);
     }
@@ -113,8 +164,6 @@ public class PhysicsObject : MonoBehaviour {
 
     private void CreateCube() {
 
-        var step = 1f / (subdiv + 1);
-        
         // construct dictionary of same points
         var points = new Dictionary<Vector3, List<int>>();
 
@@ -224,31 +273,50 @@ public class PhysicsObject : MonoBehaviour {
             }
         }
 
-        // connect all particles in sub-cube
+        // connect particles in sub-cube
+        for (int plane = 0; plane < dim - 1; plane++) {
+            for (int u = 0; u < dim; u++) {
+                for (int v = 0; v < dim; v++) {
+                    
+                    AddStructuralSpring(GetArrayIndex(plane, u, v), GetArrayIndex(plane + 1, u, v));
+                    AddStructuralSpring(GetArrayIndex(u, plane, v), GetArrayIndex(u, plane + 1, v));
+                    AddStructuralSpring(GetArrayIndex(u, v, plane), GetArrayIndex(u, v, plane + 1));
+
+                    if (plane < dim - 2) {
+                        AddBendSpring(GetArrayIndex(plane, u, v), GetArrayIndex(plane + 2, u, v));
+                        AddBendSpring(GetArrayIndex(u, plane, v), GetArrayIndex(u, plane + 2, v));
+                        AddBendSpring(GetArrayIndex(u, v, plane), GetArrayIndex(u, v, plane + 2));
+                    }
+                
+                }
+            }
+        }
+
+        // planar shear springs
+        for (int plane = 0; plane < dim; plane++) {
+            for (int u = 0; u < dim - 1; u++) {
+                for (int v = 0; v < dim - 1; v++) {
+                    
+                    AddStructuralSpring(GetArrayIndex(plane, u, v), GetArrayIndex(plane, u + 1, v + 1));
+                    AddStructuralSpring(GetArrayIndex(plane, u + 1, v), GetArrayIndex(plane, u, v + 1));
+                    AddStructuralSpring(GetArrayIndex(u, plane, v), GetArrayIndex(u + 1, plane, v + 1));
+                    AddStructuralSpring(GetArrayIndex(u + 1, plane, v), GetArrayIndex(u, plane, v + 1));
+                    AddStructuralSpring(GetArrayIndex(u, v, plane), GetArrayIndex(u + 1, v + 1, plane));
+                    AddStructuralSpring(GetArrayIndex(u + 1, v, plane), GetArrayIndex(u, v + 1, plane));
+                
+                }
+            }
+        }
+
+        // diagonal shear springs
         for (int i = 0; i < dim - 1; i++) {
             for (int j = 0; j < dim - 1; j++) {
                 for (int k = 0; k < dim - 1; k++) {
-
-                    int[] sub = {
-                        GetArrayIndex(i, j, k),
-                        GetArrayIndex(i, j, k + 1),
-                        GetArrayIndex(i, j + 1, k),
-                        GetArrayIndex(i, j + 1, k + 1),
-                        GetArrayIndex(i + 1, j, k),
-                        GetArrayIndex(i + 1, j, k + 1),
-                        GetArrayIndex(i + 1, j + 1, k),
-                        GetArrayIndex(i + 1, j + 1, k + 1),
-                        
-                    };
-
-                    for (int u = 0; u < sub.Length; u++) {
-                        for (int v = 0; v < sub.Length; v++) {
-                            if (u == v) {
-                                continue;
-                            }
-                            AddDoubleEdge(sub[u], sub[v]);
-                        }
-                    }
+                    
+                    AddShearSpring(GetArrayIndex(i, j, k), GetArrayIndex(i + 1, j + 1, k + 1));
+                    AddShearSpring(GetArrayIndex(i + 1, j, k), GetArrayIndex(i, j + 1, k + 1));
+                    AddShearSpring(GetArrayIndex(i, j + 1, k), GetArrayIndex(i + 1, j, k + 1));
+                    AddShearSpring(GetArrayIndex(i, j, k + 1), GetArrayIndex(i + 1, j + 1, k));
                 
                 }
             }
@@ -256,9 +324,19 @@ public class PhysicsObject : MonoBehaviour {
 
     }
 
-    private void AddDoubleEdge(int p1, int p2) {
-        particles[p1].AddEdge(p2, ref particles[p2]);
-        particles[p2].AddEdge(p1, ref particles[p1]);
+    private void AddStructuralSpring(int p1, int p2) {
+        particles[p1].AddStructuralSpring(p2, ref particles[p2]);
+        particles[p2].AddStructuralSpring(p1, ref particles[p1]);
+    }
+
+    private void AddShearSpring(int p1, int p2) {
+        particles[p1].AddShearSpring(p2, ref particles[p2]);
+        particles[p2].AddShearSpring(p1, ref particles[p1]);
+    }
+
+    private void AddBendSpring(int p1, int p2) {
+        particles[p1].AddBendSpring(p2, ref particles[p2]);
+        particles[p2].AddBendSpring(p1, ref particles[p1]);
     }
 
 }
