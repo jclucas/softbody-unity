@@ -117,10 +117,12 @@ public class PhysicsObject : MonoBehaviour {
         }
 
         mesh.vertices = vertices;
+        mesh.RecalculateNormals();
+        mesh.RecalculateTangents();
 
     }
 
-    void OnDrawGizmos() {
+    void OnDrawGizmosSelected() {
 
         Gizmos.color = Color.green;
 
@@ -199,7 +201,7 @@ public class PhysicsObject : MonoBehaviour {
 
                 for (int face = 0; face < 6; face++) {
                     idx[face] = face * dim * dim + i * dim + j;
-                    uvs[idx[face]] = new Vector2(u, v);
+                    uvs[idx[face]] = new Vector2(u + 0.5f, v + 0.5f);
                 }
 
                 for (int face = 0; face < 6; face++) {
@@ -265,6 +267,8 @@ public class PhysicsObject : MonoBehaviour {
         mesh.vertices = vertices;
         mesh.triangles = triangles;
         mesh.uv = uvs;
+        mesh.RecalculateNormals();
+        mesh.RecalculateTangents();
 
         // attach mesh to game object
         GetComponent<MeshFilter>().mesh = mesh;
