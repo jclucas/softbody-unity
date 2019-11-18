@@ -10,18 +10,20 @@ public class Particle {
     public Vector3 velocity;
     public Vector3 force;
     public float mass;
+    public float e;
 
     // Adjacency list
     public Dictionary<int, float> structural;
     public Dictionary<int, float> shear;
     public Dictionary<int, float> bend;
 
-    public Particle(Vector3 position, float mass, List<int> vertices) {
+    public Particle(Vector3 position, float mass, float e, List<int> vertices) {
         this.vertices = vertices;
         this.position = position;
         this.velocity = Vector3.zero;
         this.force = Vector3.zero;
         this.mass = mass;
+        this.e = e;
         structural = new Dictionary<int, float>();
         shear = new Dictionary<int, float>();
         bend = new Dictionary<int, float>();

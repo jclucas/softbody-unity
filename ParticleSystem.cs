@@ -1,0 +1,40 @@
+using System.Collections.Generic;
+using UnityEngine;
+using static Force;
+
+public class ParticleSystem {
+    
+    public Particle[] particles;
+
+    public List<Force> forces = new List<Force>();
+
+    // the floor
+    public Plane floor;
+
+    public ParticleSystem(int size) {
+        particles = new Particle[size];
+    }
+
+    public void Update() {
+        foreach (var f in forces) {
+            f.Apply();
+        }
+    }
+
+    public void AddForce(EvalFunction e) {
+        forces.Add(new Force(e, particles));
+    }
+
+    public void DetectCollisions() {
+
+        foreach (var p in particles) {
+            if (p.CollidesPlane(floor)) {
+                var impulse = p.GetImpulsePlane(Vector3.up, p.e);
+                p.MoveToPlane(floor);
+                p.velocity += impulse / p.mass;
+            } 
+        }
+
+    }
+
+}

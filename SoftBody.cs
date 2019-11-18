@@ -29,29 +29,26 @@ public class SoftBody : PhysicsObject {
 
     // PARTICLES
 
-    public Particle[] particles;
+    private ParticleSystem particles;
 
     private Dictionary<int, Particle> vertexMap = new Dictionary<int, Particle>();
 
-    // the floor
-    private Plane floor;
-
-    // Start is called before the first frame update
-    protected override void Start() {
-
-        // set collision bounds
-        floor = new Plane(Vector3.up, transform.InverseTransformPoint(Vector3.zero));
+    // TODO: clarify unity execute order
+    protected void Awake() {
 
         dim = 2 + subdiv;
         step = 1f / (subdiv + 1);
-        particles = new Particle[dim * dim * dim];
+        particles = new ParticleSystem(dim * dim * dim);
         CreateCube();
 
+        // set collision bounds
+        particles.floor = new Plane(Vector3.up, transform.InverseTransformPoint(Vector3.zero));
+
         // add global forces
-        forces.Add(new Force((p, state, dt) => state[p].mass * gravity, particles));
+        particles.AddForce((p, state, dt) => state[p].mass * gravity);
 
         // add spring forces
-        forces.Add(new Force((p, state, dt) => {
+        particles.AddForce((p, state, dt) => {
             Vector3 f = Vector3.zero;
             foreach (var other in state[p].structural) {
                 var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
@@ -59,9 +56,9 @@ public class SoftBody : PhysicsObject {
                 f += GetSpringForce(d, v, stiffness, damping);
             }
             return f;
-        }, particles));
+        });
 
-        forces.Add(new Force((p, state, dt) => {
+        particles.AddForce((p, state, dt) => {
             Vector3 f = Vector3.zero;
             foreach (var other in state[p].shear) {
                 var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
@@ -69,9 +66,9 @@ public class SoftBody : PhysicsObject {
                 f += GetSpringForce(d, v, shearStiffness, shearDamping);
             }
             return f;
-        }, particles));
+        });
 
-        forces.Add(new Force((p, state, dt) => {
+        particles.AddForce((p, state, dt) => {
             Vector3 f = Vector3.zero;
             foreach (var other in state[p].bend) {
                 var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
@@ -79,52 +76,47 @@ public class SoftBody : PhysicsObject {
                 f += GetSpringForce(d, v, bendStiffness, bendDamping);
             }
             return f;
-        }, particles));
+        });
 
     }
 
     // Update is called once per frame
     protected override void Update() {
         
-        var vertices = mesh.vertices;
-
+        particles.Update();
         ApplyForces();
         DetectCollisions();
 
-        // update geometry
-        foreach (var p in particles) {
-            p.UpdateMesh(ref vertices);
+        if (mesh) {
+            UpdateGeometry();
         }
-
-        mesh.vertices = vertices;
-        mesh.RecalculateNormals();
-        mesh.RecalculateTangents();
 
     }
 
+    // TODO: fix naughty access
     void OnDrawGizmosSelected() {
 
         Gizmos.color = Color.green;
 
-        foreach (var p in particles) {
+        foreach (var p in particles.particles) {
             foreach (var n in p.structural) {
-                Gizmos.DrawLine(transform.TransformPoint(p.position), transform.TransformPoint(particles[n.Key].position));
+                Gizmos.DrawLine(transform.TransformPoint(p.position), transform.TransformPoint(particles.particles[n.Key].position));
             }
         }
 
         Gizmos.color = Color.yellow;
 
-        foreach (var p in particles) {
+        foreach (var p in particles.particles) {
             foreach (var n in p.shear) {
-                Gizmos.DrawLine(transform.TransformPoint(p.position), transform.TransformPoint(particles[n.Key].position));
+                Gizmos.DrawLine(transform.TransformPoint(p.position), transform.TransformPoint(particles.particles[n.Key].position));
             }
         }
 
         Gizmos.color = Color.blue;
 
-        foreach (var p in particles) {
+        foreach (var p in particles.particles) {
             foreach (var n in p.bend) {
-                Gizmos.DrawLine(transform.TransformPoint(p.position), transform.TransformPoint(particles[n.Key].position));
+                Gizmos.DrawLine(transform.TransformPoint(p.position), transform.TransformPoint(particles.particles[n.Key].position));
             }
         }
 
@@ -132,13 +124,23 @@ public class SoftBody : PhysicsObject {
 
     protected override void DetectCollisions() {
         
-        foreach (var p in particles) {
-            if (p.CollidesPlane(floor)) {
-                var impulse = p.GetImpulsePlane(Vector3.up, e);
-                p.MoveToPlane(floor);
-                p.velocity += impulse / mass;
-            } 
+        particles.DetectCollisions();
+
+    }
+
+    // PRIVATE METHODS
+
+    private void UpdateGeometry() {
+
+        var vertices = mesh.vertices;
+        
+        foreach (var p in particles.particles) {
+            p.UpdateMesh(ref vertices);
         }
+
+        mesh.vertices = vertices;
+        mesh.RecalculateNormals();
+        mesh.RecalculateTangents();
 
     }
 
@@ -273,7 +275,7 @@ public class SoftBody : PhysicsObject {
                 for (int k = 0; k < dim; k++) {
                     var p = new Vector3(-0.5f + step * i, -0.5f + step * j, -0.5f + step * k);
                     var vertexList = points.ContainsKey(p) ? points[p] : new List<int>();
-                    particles[GetArrayIndex(i, j, k)] = new Particle(p, mass, vertexList);
+                    particles.particles[GetArrayIndex(i, j, k)] = new Particle(p, mass, e, vertexList);
                 }
             }
         }
@@ -330,18 +332,18 @@ public class SoftBody : PhysicsObject {
     }
 
     private void AddStructuralSpring(int p1, int p2) {
-        particles[p1].AddStructuralSpring(p2, ref particles[p2]);
-        particles[p2].AddStructuralSpring(p1, ref particles[p1]);
+        particles.particles[p1].AddStructuralSpring(p2, ref particles.particles[p2]);
+        particles.particles[p2].AddStructuralSpring(p1, ref particles.particles[p1]);
     }
 
     private void AddShearSpring(int p1, int p2) {
-        particles[p1].AddShearSpring(p2, ref particles[p2]);
-        particles[p2].AddShearSpring(p1, ref particles[p1]);
+        particles.particles[p1].AddShearSpring(p2, ref particles.particles[p2]);
+        particles.particles[p2].AddShearSpring(p1, ref particles.particles[p1]);
     }
 
     private void AddBendSpring(int p1, int p2) {
-        particles[p1].AddBendSpring(p2, ref particles[p2]);
-        particles[p2].AddBendSpring(p1, ref particles[p1]);
+        particles.particles[p1].AddBendSpring(p2, ref particles.particles[p2]);
+        particles.particles[p2].AddBendSpring(p1, ref particles.particles[p1]);
     }
 
 }
