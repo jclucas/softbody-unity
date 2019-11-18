@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Draggable : PhysicsObject {
+public class Draggable : SoftBody {
 
     private bool clicked = false;
 

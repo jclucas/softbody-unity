@@ -4,9 +4,13 @@ using UnityEngine;
 
 public class Physics : MonoBehaviour {
 
+    PhysicsObject[] objects;
+
     // Start is called before the first frame update
     void Start() {
-        // init world state
+        
+        objects = GetComponentsInChildren<PhysicsObject>();
+
     }
 
     // Update is called once per frame
