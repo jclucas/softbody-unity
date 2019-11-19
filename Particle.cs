@@ -3,9 +3,6 @@ using System.Collections.Generic;
 
 public class Particle {
 
-    // List of associated mesh vertices
-    List<int> vertices;
-
     public Vector3 position;
     public Vector3 velocity;
     public Vector3 force;
@@ -17,8 +14,7 @@ public class Particle {
     public Dictionary<int, float> shear;
     public Dictionary<int, float> bend;
 
-    public Particle(Vector3 position, float mass, float e, List<int> vertices) {
-        this.vertices = vertices;
+    public Particle(Vector3 position, float mass, float e) {
         this.position = position;
         this.velocity = Vector3.zero;
         this.force = Vector3.zero;
@@ -50,12 +46,6 @@ public class Particle {
     public void AddBendSpring(int index, ref Particle other) {
         if (!bend.ContainsKey(index)) {
             bend.Add(index, GetDistance(other));
-        }
-    }
-
-    public void UpdateMesh(ref Vector3[] mesh) {
-        foreach (var i in vertices) {
-            mesh[i] = position;
         }
     }
 

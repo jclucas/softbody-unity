@@ -27,11 +27,11 @@ public class SoftBody : PhysicsObject {
 
     private float step;
 
+    private Dictionary<Particle, List<int>> vertexMap;
+
     // PARTICLES
 
     private ParticleSystem particles;
-
-    private Dictionary<int, Particle> vertexMap = new Dictionary<int, Particle>();
 
     // TODO: clarify unity execute order
     protected void Awake() {
@@ -129,43 +129,6 @@ public class SoftBody : PhysicsObject {
     }
 
     // PRIVATE METHODS
-
-    private void UpdateGeometry() {
-
-        var vertices = mesh.vertices;
-        
-        foreach (var p in particles.particles) {
-            p.UpdateMesh(ref vertices);
-        }
-
-        mesh.vertices = vertices;
-        mesh.RecalculateNormals();
-        mesh.RecalculateTangents();
-
-    }
-
-    // HELPER METHODS
-
-    private static Vector3 GetSpringForce(Vector3 d, Vector3 v, float k, float c) {
-        return (d * k * -1) - (c * v);
-    }
-
-    public Vector3 GetDisplacement(Vector3 a, Vector3 b, float expected) {
-        if (a == b) {
-            return Vector3.zero;
-        }
-        var actual = a - b;
-        var displacement = Vector3.Magnitude(actual) - expected;
-        return displacement * (actual / Vector3.Magnitude(actual));
-    }
-
-    public Vector3 GetRelativeVelocity(Particle a, Particle b) {
-        return Vector3.Project(a.velocity - b.velocity, a.position - b.position);
-    }
-
-    private int GetArrayIndex(int x, int y, int z) {
-        return ((x * dim) + y) * dim + z; 
-    }
 
     private void CreateCube() {
 
@@ -269,13 +232,18 @@ public class SoftBody : PhysicsObject {
         // attach mesh to game object
         GetComponent<MeshFilter>().mesh = mesh;
 
+        // keep track of which mesh vertices to move with particles
+        vertexMap = new Dictionary<Particle, List<int>>();
+
         // create particles
         for (int i = 0; i < dim; i++) {
             for (int j = 0; j < dim; j++) {
                 for (int k = 0; k < dim; k++) {
                     var p = new Vector3(-0.5f + step * i, -0.5f + step * j, -0.5f + step * k);
                     var vertexList = points.ContainsKey(p) ? points[p] : new List<int>();
-                    particles.particles[GetArrayIndex(i, j, k)] = new Particle(p, mass, e, vertexList);
+                    var particle = new Particle(p, mass, e);
+                    particles.particles[GetArrayIndex(i, j, k)] = particle;
+                    vertexMap[particle] = vertexList;
                 }
             }
         }
@@ -329,6 +297,45 @@ public class SoftBody : PhysicsObject {
             }
         }
 
+    }
+
+    private void UpdateGeometry() {
+
+        var vertices = mesh.vertices;
+        
+        foreach (var p in vertexMap.Keys) {
+            foreach (var i in vertexMap[p]) {
+                vertices[i] = p.position;
+            }
+        }
+
+        mesh.vertices = vertices;
+        mesh.RecalculateNormals();
+        mesh.RecalculateTangents();
+
+    }
+
+    // HELPER METHODS
+
+    private static Vector3 GetSpringForce(Vector3 d, Vector3 v, float k, float c) {
+        return (d * k * -1) - (c * v);
+    }
+
+    public static Vector3 GetDisplacement(Vector3 a, Vector3 b, float expected) {
+        if (a == b) {
+            return Vector3.zero;
+        }
+        var actual = a - b;
+        var displacement = Vector3.Magnitude(actual) - expected;
+        return displacement * (actual / Vector3.Magnitude(actual));
+    }
+
+    public static Vector3 GetRelativeVelocity(Particle a, Particle b) {
+        return Vector3.Project(a.velocity - b.velocity, a.position - b.position);
+    }
+
+    private int GetArrayIndex(int x, int y, int z) {
+        return ((x * dim) + y) * dim + z; 
     }
 
     private void AddStructuralSpring(int p1, int p2) {
