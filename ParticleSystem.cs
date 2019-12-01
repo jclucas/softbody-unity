@@ -8,6 +8,8 @@ public class ParticleSystem {
 
     public List<Force> forces = new List<Force>();
 
+    public int size { get => particles.Length; }
+
     // the floor
     public Plane floor;
 
@@ -35,6 +37,10 @@ public class ParticleSystem {
             } 
         }
 
+    }
+
+    public float GetDistance(int a, int b) {
+        return Vector3.Distance(particles[a].position, particles[b].position);
     }
 
 }

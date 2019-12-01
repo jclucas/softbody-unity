@@ -23,11 +23,21 @@ public class SoftBody : PhysicsObject {
 
     private Mesh mesh;
 
+    // dimension of each cube edge
     private int dim;
 
+    // distance between adjacent points
     private float step;
 
     private Dictionary<Particle, List<int>> vertexMap;
+
+    // EDGES
+
+    public Dictionary<int, float>[] structural;
+
+    public Dictionary<int, float>[] shear;
+
+    public Dictionary<int, float>[] bend;
 
     // PARTICLES
 
@@ -50,7 +60,7 @@ public class SoftBody : PhysicsObject {
         // add spring forces
         particles.AddForce((p, state, dt) => {
             Vector3 f = Vector3.zero;
-            foreach (var other in state[p].structural) {
+            foreach (var other in structural[p]) {
                 var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
                 var v = GetRelativeVelocity(state[p], state[other.Key]);
                 f += GetSpringForce(d, v, stiffness, damping);
@@ -60,7 +70,7 @@ public class SoftBody : PhysicsObject {
 
         particles.AddForce((p, state, dt) => {
             Vector3 f = Vector3.zero;
-            foreach (var other in state[p].shear) {
+            foreach (var other in shear[p]) {
                 var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
                 var v = GetRelativeVelocity(state[p], state[other.Key]);
                 f += GetSpringForce(d, v, shearStiffness, shearDamping);
@@ -70,7 +80,7 @@ public class SoftBody : PhysicsObject {
 
         particles.AddForce((p, state, dt) => {
             Vector3 f = Vector3.zero;
-            foreach (var other in state[p].bend) {
+            foreach (var other in bend[p]) {
                 var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
                 var v = GetRelativeVelocity(state[p], state[other.Key]);
                 f += GetSpringForce(d, v, bendStiffness, bendDamping);
@@ -98,25 +108,25 @@ public class SoftBody : PhysicsObject {
 
         Gizmos.color = Color.green;
 
-        foreach (var p in particles.particles) {
-            foreach (var n in p.structural) {
-                Gizmos.DrawLine(transform.TransformPoint(p.position), transform.TransformPoint(particles.particles[n.Key].position));
+        for (int p = 0; p < particles.size; p++) {
+            foreach (var n in structural[p]) {
+                Gizmos.DrawLine(transform.TransformPoint(particles.particles[p].position), transform.TransformPoint(particles.particles[n.Key].position));
             }
         }
 
         Gizmos.color = Color.yellow;
 
-        foreach (var p in particles.particles) {
-            foreach (var n in p.shear) {
-                Gizmos.DrawLine(transform.TransformPoint(p.position), transform.TransformPoint(particles.particles[n.Key].position));
+        for (int p = 0; p < particles.size; p++) {
+            foreach (var n in shear[p]) {
+                Gizmos.DrawLine(transform.TransformPoint(particles.particles[p].position), transform.TransformPoint(particles.particles[n.Key].position));
             }
         }
 
         Gizmos.color = Color.blue;
 
-        foreach (var p in particles.particles) {
-            foreach (var n in p.bend) {
-                Gizmos.DrawLine(transform.TransformPoint(p.position), transform.TransformPoint(particles.particles[n.Key].position));
+        for (int p = 0; p < particles.size; p++) {
+            foreach (var n in bend[p]) {
+                Gizmos.DrawLine(transform.TransformPoint(particles.particles[p].position), transform.TransformPoint(particles.particles[n.Key].position));
             }
         }
 
@@ -135,9 +145,12 @@ public class SoftBody : PhysicsObject {
         // construct dictionary of same points
         var points = new Dictionary<Vector3, List<int>>();
 
+        // mesh data
         var vertices = new Vector3[6 * dim * dim];
         var triangles = new int[36 * (dim - 1) * (dim - 1)];
         var uvs = new Vector2[6 * dim * dim];
+
+        // temp array for processing vertices per face
         var idx = new int[6];
 
         // generate verts for each face
@@ -248,6 +261,17 @@ public class SoftBody : PhysicsObject {
             }
         }
 
+        // initialize adjacency list
+        structural = new Dictionary<int, float>[particles.size];
+        shear = new Dictionary<int, float>[particles.size];
+        bend = new Dictionary<int, float>[particles.size];
+
+        for (int i = 0; i < particles.size; i++) {
+            structural[i] = new Dictionary<int, float>();
+            shear[i] = new Dictionary<int, float>();
+            bend[i] = new Dictionary<int, float>();
+        } 
+
         // connect particles in sub-cube
         for (int plane = 0; plane < dim - 1; plane++) {
             for (int u = 0; u < dim; u++) {
@@ -339,18 +363,27 @@ public class SoftBody : PhysicsObject {
     }
 
     private void AddStructuralSpring(int p1, int p2) {
-        particles.particles[p1].AddStructuralSpring(p2, ref particles.particles[p2]);
-        particles.particles[p2].AddStructuralSpring(p1, ref particles.particles[p1]);
+        if (!structural[p1].ContainsKey(p2)) {
+            var dist = particles.GetDistance(p1, p2);
+            structural[p1].Add(p2, dist);
+            structural[p2].Add(p1, dist);
+        }
     }
 
     private void AddShearSpring(int p1, int p2) {
-        particles.particles[p1].AddShearSpring(p2, ref particles.particles[p2]);
-        particles.particles[p2].AddShearSpring(p1, ref particles.particles[p1]);
+        if (!shear[p1].ContainsKey(p2)) {
+            var dist = particles.GetDistance(p1, p2);
+            shear[p1].Add(p2, dist);
+            shear[p2].Add(p1, dist);
+        }
     }
 
     private void AddBendSpring(int p1, int p2) {
-        particles.particles[p1].AddBendSpring(p2, ref particles.particles[p2]);
-        particles.particles[p2].AddBendSpring(p1, ref particles.particles[p1]);
+        if (!bend[p1].ContainsKey(p2)) {
+            var dist = particles.GetDistance(p1, p2);
+            bend[p1].Add(p2, dist);
+            bend[p2].Add(p1, dist);
+        }
     }
 
 }

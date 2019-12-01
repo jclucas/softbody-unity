@@ -9,44 +9,18 @@ public class Particle {
     public float mass;
     public float e;
 
-    // Adjacency list
-    public Dictionary<int, float> structural;
-    public Dictionary<int, float> shear;
-    public Dictionary<int, float> bend;
-
     public Particle(Vector3 position, float mass, float e) {
         this.position = position;
         this.velocity = Vector3.zero;
         this.force = Vector3.zero;
         this.mass = mass;
         this.e = e;
-        structural = new Dictionary<int, float>();
-        shear = new Dictionary<int, float>();
-        bend = new Dictionary<int, float>();
     }
 
     public void SetState(ParticleState state) {
         this.position = state.position;
         this.velocity = state.velocity;
         this.force = state.force;
-    }
-
-    public void AddStructuralSpring(int index, ref Particle other) {
-        if (!structural.ContainsKey(index)) {
-            structural.Add(index, GetDistance(other));
-        }
-    }
-
-    public void AddShearSpring(int index, ref Particle other) {
-        if (!shear.ContainsKey(index)) {
-            shear.Add(index, GetDistance(other));
-        }
-    }
-
-    public void AddBendSpring(int index, ref Particle other) {
-        if (!bend.ContainsKey(index)) {
-            bend.Add(index, GetDistance(other));
-        }
     }
 
     private float GetDistance(Particle other) {
