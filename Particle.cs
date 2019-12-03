@@ -27,10 +27,6 @@ public class Particle {
         return Vector3.Distance(position, other.position);
     }
 
-    public bool CollidesPlane(Plane p) {
-        return (p.GetDistanceToPoint(position) < 0);
-    }
-
     // impulse for collision with a plane with normal n
     public Vector3 GetImpulsePlane(Vector3 n, float e) {
         return ((-(1 + e) * (Vector3.Dot(this.velocity, n))) / (1/this.mass)) * n;
@@ -39,6 +35,11 @@ public class Particle {
     // move position of particle to given plane along velocity
     public void MoveToPlane(Plane p) {
         position += Vector3.Project(p.ClosestPointOnPlane(position) - position, velocity);
+    }
+
+    // move particle back in time
+    public void MoveBack(Vector3 difference) {
+        position += Vector3.Project(difference, velocity);
     }
 
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

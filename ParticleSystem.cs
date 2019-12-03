@@ -10,9 +10,6 @@ public class ParticleSystem {
 
     public int size { get => particles.Length; }
 
-    // the floor
-    public Plane floor;
-
     public ParticleSystem(int size) {
         particles = new Particle[size];
     }
@@ -35,12 +32,20 @@ public class ParticleSystem {
 
     public void DetectCollisions() {
 
+        var colliders = Object.FindObjectsOfType<CollisionPlane>();
+
         foreach (var p in particles) {
-            if (p.CollidesPlane(floor)) {
-                var impulse = p.GetImpulsePlane(Vector3.up, p.e);
-                p.MoveToPlane(floor);
-                p.velocity += impulse / p.mass;
-            } 
+
+            foreach (var plane in colliders) {
+
+                if (plane.Collides((p.position))) {
+                    var impulse = p.GetImpulsePlane(plane.normal, p.e);
+                    p.MoveBack(plane.GetCollisionAmount(p.position));
+                    p.velocity += impulse / p.mass;
+                }
+
+            }
+            
         }
 
     }

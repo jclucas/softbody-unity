@@ -51,9 +51,6 @@ public class SoftBody : PhysicsObject {
         particles = new ParticleSystem(dim * dim * dim);
         CreateCube();
 
-        // set collision bounds
-        particles.floor = new Plane(Vector3.up, transform.InverseTransformPoint(Vector3.zero));
-
         // add global forces
         particles.AddForceField((p, state, dt) => state[p].mass * gravity);
 
