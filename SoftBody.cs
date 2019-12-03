@@ -55,10 +55,10 @@ public class SoftBody : PhysicsObject {
         particles.floor = new Plane(Vector3.up, transform.InverseTransformPoint(Vector3.zero));
 
         // add global forces
-        particles.AddForce((p, state, dt) => state[p].mass * gravity);
+        particles.AddForceField((p, state, dt) => state[p].mass * gravity);
 
         // add spring forces
-        particles.AddForce((p, state, dt) => {
+        particles.AddForceField((p, state, dt) => {
             Vector3 f = Vector3.zero;
             foreach (var other in structural[p]) {
                 var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
@@ -68,7 +68,7 @@ public class SoftBody : PhysicsObject {
             return f;
         });
 
-        particles.AddForce((p, state, dt) => {
+        particles.AddForceField((p, state, dt) => {
             Vector3 f = Vector3.zero;
             foreach (var other in shear[p]) {
                 var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
@@ -78,7 +78,7 @@ public class SoftBody : PhysicsObject {
             return f;
         });
 
-        particles.AddForce((p, state, dt) => {
+        particles.AddForceField((p, state, dt) => {
             Vector3 f = Vector3.zero;
             foreach (var other in bend[p]) {
                 var d = GetDisplacement(state[p].position, state[other.Key].position, other.Value);
@@ -94,7 +94,6 @@ public class SoftBody : PhysicsObject {
     protected override void Update() {
         
         particles.Update();
-        ApplyForces();
         DetectCollisions();
 
         if (mesh) {

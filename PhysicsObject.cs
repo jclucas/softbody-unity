@@ -24,14 +24,6 @@ public class PhysicsObject : MonoBehaviour {
         
     }
 
-    protected virtual void ApplyForces() {
-
-        foreach (var f in forces) {
-            f.Apply();
-        }
-
-    }
-
     protected virtual void DetectCollisions() {
         
         // rigid body collision

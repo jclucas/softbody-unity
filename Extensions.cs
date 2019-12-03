@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public static class Extensions {
 
-    public static ParticleState[] Step(this Particle[] state, Force f, float dt) {
+    public static ParticleState[] Step(this Particle[] state, List<Force> f, float dt) {
 
         var next = new ParticleState[state.Length];
         
@@ -14,7 +14,14 @@ public static class Extensions {
             next[i].position = state[i].position + state[i].velocity * dt;
             next[i].velocity = state[i].velocity + state[i].force / state[i].mass * dt;
             // calculate
-            next[i].force = f.eval(i, state, dt);
+            next[i].force = Vector3.zero;
+        }
+
+        foreach (var force in f) {
+            var result = force.Eval(state, dt);
+            for (int i = 0; i < state.Length; i++) {
+                next[i].force += result[i];
+            }
         }
 
         for (int i = 0; i < state.Length; i++) {
@@ -25,12 +32,12 @@ public static class Extensions {
 
     }
 
-    public static ParticleState[] IntegrateMidpoint(this Particle[] state, Force f, float dt) {
+    public static ParticleState[] IntegrateMidpoint(this Particle[] state, List<Force> f, float dt) {
         var k1 = state.Step(f, dt / 2);
         return state.Step(f, dt);
     }
 
-    public static Particle[] Integrate(this Particle[] state, Force f, float dt) {
+    public static Particle[] Integrate(this Particle[] state, List<Force> f, float dt) {
         
         var k1 = state.Step(f, 0);
         var k2 = state.Step(f, dt/2);

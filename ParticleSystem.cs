@@ -18,13 +18,19 @@ public class ParticleSystem {
     }
 
     public void Update() {
-        foreach (var f in forces) {
-            f.Apply();
-        }
+        particles = particles.Integrate(forces, Time.fixedDeltaTime);
     }
 
-    public void AddForce(EvalFunction e) {
-        forces.Add(new Force(e, particles));
+    public void AddForceField(EvalFunction e) {
+        forces.Add(new ForceField(e));
+    }
+
+    public void AddUnaryForce(int p, EvalFunction e) {
+        forces.Add(new UnaryForce(p, e));
+    }
+
+    public void AddBinaryForce(int p1, int p2, EvalFunction e) {
+        forces.Add(new BinaryForce(p1, p2, e));
     }
 
     public void DetectCollisions() {
