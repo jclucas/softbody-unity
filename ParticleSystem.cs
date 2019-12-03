@@ -4,18 +4,41 @@ using static Force;
 
 public class ParticleSystem {
     
-    public Particle[] particles;
+    private Particle[] particles;
 
     public List<Force> forces = new List<Force>();
 
     public int size { get => particles.Length; }
 
+    private Transform transform;
+
     public ParticleSystem(int size) {
         particles = new Particle[size];
     }
 
+    public ParticleSystem(int size, Transform transform) {
+        particles = new Particle[size];
+        this.transform = transform;
+    }
+
     public void Update() {
         particles = particles.Integrate(forces, Time.fixedDeltaTime);
+    }
+
+    public void AddParticle(int index, Particle p) {
+        particles[index] = p;
+    }
+
+    public void SpawnParticle(int index, Vector3 position, float mass, float e) {
+        particles[index] = new Particle(position, mass, e);
+    }
+
+    public Vector3 GetPosition(int index) {
+        return transform.InverseTransformPoint(particles[index].position);
+    }
+
+    public void SetPosition(int index, Vector3 newPos) {
+        particles[index].position = transform.TransformPoint(newPos);
     }
 
     public void AddForceField(EvalFunction e) {
@@ -45,7 +68,7 @@ public class ParticleSystem {
                 }
 
             }
-            
+
         }
 
     }

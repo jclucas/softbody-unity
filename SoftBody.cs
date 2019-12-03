@@ -48,7 +48,7 @@ public class SoftBody : PhysicsObject {
 
         dim = 2 + subdiv;
         step = 1f / (subdiv + 1);
-        particles = new ParticleSystem(dim * dim * dim);
+        particles = new ParticleSystem(dim * dim * dim, transform);
         CreateCube();
 
         // add global forces
@@ -99,14 +99,14 @@ public class SoftBody : PhysicsObject {
 
     }
 
-    // TODO: fix naughty access
     void OnDrawGizmosSelected() {
 
         Gizmos.color = Color.green;
 
         for (int p = 0; p < particles.size; p++) {
             foreach (var n in structural[p]) {
-                Gizmos.DrawLine(transform.TransformPoint(particles.particles[p].position), transform.TransformPoint(particles.particles[n.Key].position));
+                Gizmos.DrawLine(transform.TransformPoint(particles.GetPosition(p)), 
+                        transform.TransformPoint(particles.GetPosition(n.Key)));
             }
         }
 
@@ -114,7 +114,8 @@ public class SoftBody : PhysicsObject {
 
         for (int p = 0; p < particles.size; p++) {
             foreach (var n in shear[p]) {
-                Gizmos.DrawLine(transform.TransformPoint(particles.particles[p].position), transform.TransformPoint(particles.particles[n.Key].position));
+                Gizmos.DrawLine(transform.TransformPoint(particles.GetPosition(p)), 
+                        transform.TransformPoint(particles.GetPosition(n.Key)));
             }
         }
 
@@ -122,7 +123,8 @@ public class SoftBody : PhysicsObject {
 
         for (int p = 0; p < particles.size; p++) {
             foreach (var n in bend[p]) {
-                Gizmos.DrawLine(transform.TransformPoint(particles.particles[p].position), transform.TransformPoint(particles.particles[n.Key].position));
+                Gizmos.DrawLine(transform.TransformPoint(particles.GetPosition(p)), 
+                        transform.TransformPoint(particles.GetPosition(n.Key)));
             }
         }
 
@@ -250,8 +252,9 @@ public class SoftBody : PhysicsObject {
                 for (int k = 0; k < dim; k++) {
                     var p = new Vector3(-0.5f + step * i, -0.5f + step * j, -0.5f + step * k);
                     var vertexList = points.ContainsKey(p) ? points[p] : new List<int>();
-                    var particle = new Particle(p, mass, e);
-                    particles.particles[GetArrayIndex(i, j, k)] = particle;
+                    // TODO use only obj or index references
+                    var particle = new Particle(transform.TransformPoint(p), mass, e);
+                    particles.AddParticle(GetArrayIndex(i, j, k), particle);
                     vertexMap[particle] = vertexList;
                 }
             }
@@ -325,7 +328,7 @@ public class SoftBody : PhysicsObject {
         
         foreach (var p in vertexMap.Keys) {
             foreach (var i in vertexMap[p]) {
-                vertices[i] = p.position;
+                vertices[i] = transform.InverseTransformPoint(p.position);
             }
         }
 
