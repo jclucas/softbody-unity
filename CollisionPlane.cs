@@ -18,7 +18,7 @@ public class CollisionPlane : MonoBehaviour {
     }
 
     public bool Collides(Vector3 point) {
-        return (plane.GetDistanceToPoint(point) < 0);
+        return (!plane.GetSide(point));
     }
 
     public Vector3 GetCollisionAmount(Vector3 point) {
