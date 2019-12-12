@@ -5,22 +5,53 @@ public class SoftBody : PhysicsObject {
 
     // PARAMETERS
 
+    /// <summary>
+    /// Stiffness of structural springs
+    /// </summary>
     public float stiffness = 50;
 
-    public float damping = 1;
+    /// <summary>
+    /// Damping ratio of structural springs where 1 indicates critical damping
+    /// </summary>
+    public float dampingRatio = 1;
 
+    /// <summary>
+    /// Stiffness of shear springs
+    /// </summary>
     public float shearStiffness = 50;
 
-    public float shearDamping = 1;
+    /// <summary>
+    /// Damping ratio of bend springs where 1 indicates critical damping
+    /// </summary>
+    public float shearDampingRatio = 1;
 
+    /// <summary>
+    /// Stiffness of bend springs
+    /// </summary>
     public float bendStiffness = 50;
 
-    public float bendDamping = 1;
+    /// <summary>
+    /// Damping ratio of bend springs where 1 indicates critical damping
+    /// </summary>
+    public float bendDampingRatio = 1;
 
+    /// <summary>
+    /// Number of subdivisions per edge
+    /// </summary>
     public int subdiv = 0;
+
+    // damping coefficient
+    private float damping;
+
+    // shear damping coefficient
+    private float shearDamping;
+
+    // bend damping coefficient
+    private float bendDamping;
 
     // GEOMETRY
 
+    // reference to mesh filter
     private Mesh mesh;
 
     // dimension of each cube edge
@@ -43,9 +74,9 @@ public class SoftBody : PhysicsObject {
 
     private ParticleSystem particles;
 
-    // TODO: clarify unity execute order
     protected void Awake() {
 
+        // initialize structure
         dim = 2 + subdiv;
         step = 1f / (subdiv + 1);
         particles = new ParticleSystem(dim * dim * dim, transform);
@@ -53,6 +84,15 @@ public class SoftBody : PhysicsObject {
 
         // add global forces
         particles.AddForceField((p, state, dt) => state[p].mass * gravity);
+
+        // calculate spring coefficients
+        damping = dampingRatio * 2 * Mathf.Sqrt(mass * stiffness);
+        shearDamping =  shearDampingRatio * 2 * Mathf.Sqrt(mass * shearStiffness);
+        bendDamping = bendDampingRatio * 2 * Mathf.Sqrt(mass * bendStiffness);
+
+        Debug.Log("damping = " + damping);
+        Debug.Log("shear damping = " + shearDamping);
+        Debug.Log("bend damping = " + bendDamping);
 
         // add spring forces
         particles.AddForceField((p, state, dt) => {
