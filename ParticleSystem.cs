@@ -55,15 +55,16 @@ public class ParticleSystem {
 
     public void DetectCollisions() {
 
-        var colliders = Object.FindObjectsOfType<CollisionPlane>();
+        var colliders = Object.FindObjectsOfType<CollisionObject>();
 
         foreach (var p in particles) {
 
-            foreach (var plane in colliders) {
+            foreach (var obj in colliders) {
 
-                if (plane.Collides((p.position))) {
-                    var impulse = p.GetImpulsePlane(plane.normal, p.e);
-                    p.MoveBack(plane.GetCollisionAmount(p.position));
+                if (obj.Collides((p.position))) {
+                    var normal = obj.GetCollisionAmount(p.position);
+                    var impulse = p.GetImpulsePlane(normal.normalized, p.e);
+                    p.MoveBack(normal);
                     p.velocity += impulse / p.mass;
                 }
 

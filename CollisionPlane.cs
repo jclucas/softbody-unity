@@ -1,10 +1,6 @@
 using UnityEngine;
 
-public class CollisionPlane : MonoBehaviour {
-
-    public Vector3 normal { 
-        get => plane.normal;
-    }
+public class CollisionPlane : CollisionObject {
 
     private Plane plane;
 
@@ -17,11 +13,11 @@ public class CollisionPlane : MonoBehaviour {
         Gizmos.DrawLine(transform.position, transform.position + plane.normal);
     }
 
-    public bool Collides(Vector3 point) {
+    public override bool Collides(Vector3 point) {
         return (!plane.GetSide(point));
     }
 
-    public Vector3 GetCollisionAmount(Vector3 point) {
+    public override Vector3 GetCollisionAmount(Vector3 point) {
         return plane.ClosestPointOnPlane(point) - point;
     }
 
