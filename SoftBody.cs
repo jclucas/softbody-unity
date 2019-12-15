@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Elastic soft body system simulated by point masses and springs.
+/// </summary>
 public class SoftBody : MonoBehaviour {
 
     // PARAMETERS
@@ -102,10 +105,6 @@ public class SoftBody : MonoBehaviour {
         damping = dampingRatio * 2 * Mathf.Sqrt(mass * stiffness);
         shearDamping =  shearDampingRatio * 2 * Mathf.Sqrt(mass * shearStiffness);
         bendDamping = bendDampingRatio * 2 * Mathf.Sqrt(mass * bendStiffness);
-
-        Debug.Log("damping = " + damping);
-        Debug.Log("shear damping = " + shearDamping);
-        Debug.Log("bend damping = " + bendDamping);
 
         // add spring forces
         particles.AddForceField((p, state, dt) => {

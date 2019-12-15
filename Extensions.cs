@@ -1,9 +1,15 @@
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 
 public static class Extensions {
 
+    /// <summary>
+    /// Perform Euler integration on a set of particles.
+    /// </summary>
+    /// <param name="state">Initial state of the system.</param>
+    /// <param name="f">List of forces to apply.</param>
+    /// <param name="dt">Evaluation time step.</param>
+    /// <returns>The new state of the system.</returns>
     public static ParticleState[] Step(this Particle[] state, List<Force> f, float dt) {
 
         var next = new ParticleState[state.Length];
@@ -32,11 +38,25 @@ public static class Extensions {
 
     }
 
+    /// <summary>
+    /// Perform midpoint integration on a set of particles.
+    /// </summary>
+    /// <param name="state">Initial state of the system.</param>
+    /// <param name="f">List of forces to apply.</param>
+    /// <param name="dt">Evaluation time step.</param>
+    /// <returns>The new state of the system.</returns>
     public static ParticleState[] IntegrateMidpoint(this Particle[] state, List<Force> f, float dt) {
         var k1 = state.Step(f, dt / 2);
         return state.Step(f, dt);
     }
 
+    /// <summary>
+    /// Perform Runge-Kutta integration on a set of particles.
+    /// </summary>
+    /// <param name="state">Initial state of the system.</param>
+    /// <param name="f">List of forces to apply.</param>
+    /// <param name="dt">Evaluation time step.</param>
+    /// <returns>The new state of the system.</returns>
     public static Particle[] Integrate(this Particle[] state, List<Force> f, float dt) {
         
         var k1 = state.Step(f, 0);

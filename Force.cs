@@ -1,24 +1,45 @@
 using UnityEngine;
 
+/// <summary>
+/// A force that can be evaluated based on the current state of the system.
+/// </summary>
 public abstract class Force {
 
+    /// <summary>
+    /// Force evaluation function.
+    /// </summary>
+    /// <param name="particle">index of particle being evaluated</param>
+    /// <param name="state">array of all particles in the system</param>
+    /// <param name="dt">evaluation timestep</param>
+    /// <returns></returns>
     public delegate Vector3 EvalFunction(int particle, Particle[] state, float dt);
 
-    // evaluation function
+    /// <summary>
+    /// Function for evaluating this force.
+    /// </summary>
     internal EvalFunction eval;
 
-    // particles to apply it to
-    // public Particle[] particles;
-
-    public Force(EvalFunction eval) { //, Particle[] particles) {
+    /// <summary>
+    /// Constructor for a force.
+    /// </summary>
+    /// <param name="eval">evaluation function</param>
+    public Force(EvalFunction eval) {
         this.eval = eval;
-        // this.particles = particles;
     }
 
+    /// <summary>
+    /// Evaluates a force on a system.
+    /// </summary>
+    /// <param name="state">current state of the system</param>
+    /// <param name="dt">evaluation timestep</param>
+    /// <returns></returns>
     public abstract Vector3[] Eval(Particle[] state, float dt);
 
 }
 
+/// <summary>
+/// A force that applies to all particles in the state.
+/// </summary>
 public class ForceField : Force {
 
     public ForceField(EvalFunction eval) : base(eval) {}
@@ -37,6 +58,9 @@ public class ForceField : Force {
 
 }
 
+/// <summary>
+/// A force that applies to a single particle.
+/// </summary>
 public class UnaryForce : Force {
 
     // particle index
@@ -62,6 +86,9 @@ public class UnaryForce : Force {
 
 }
 
+/// <summary>
+/// An equal and opposite force applied to a pair of particles
+/// </summary>
 public class BinaryForce : Force {
 
     // particle indices
