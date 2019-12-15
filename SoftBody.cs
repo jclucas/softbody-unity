@@ -1,9 +1,19 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-public class SoftBody : PhysicsObject {
+public class SoftBody : MonoBehaviour {
 
     // PARAMETERS
+
+    /// <summary>
+    /// Mass of each particle
+    /// </summary>
+    public float mass = 1;
+
+    /// <summary>
+    /// Coefficient of restitution
+    /// </summary>
+    public float e = 0.5f;
 
     /// <summary>
     /// Stiffness of structural springs
@@ -39,6 +49,9 @@ public class SoftBody : PhysicsObject {
     /// Number of subdivisions per edge
     /// </summary>
     public int subdiv = 0;
+
+    // acceleration of gravity
+    private static Vector3 gravity = new Vector3(0, -9.81f, 0);
 
     // damping coefficient
     private float damping;
@@ -128,7 +141,7 @@ public class SoftBody : PhysicsObject {
     }
 
     // Update is called once per frame
-    protected override void Update() {
+    protected void Update() {
         
         particles.Update();
         DetectCollisions();
@@ -170,7 +183,7 @@ public class SoftBody : PhysicsObject {
 
     }
 
-    protected override void DetectCollisions() {
+    protected void DetectCollisions() {
         
         particles.DetectCollisions();
 
