@@ -22,10 +22,7 @@ public class ParticleSystem {
     /// Create an empty particle system.
     /// </summary>
     /// <param name="size">Maximum number of particles.</param>
-    public ParticleSystem(int size) {
-        particles = new Particle[size];
-    }
-
+    /// <param name="transform">Transform of the parent GameObject.</param>
     public ParticleSystem(int size, Transform transform) {
         particles = new Particle[size];
         this.transform = transform;
@@ -116,7 +113,7 @@ public class ParticleSystem {
 
                 if (obj.Collides((p.position))) {
                     var normal = obj.GetCollisionAmount(p.position);
-                    var impulse = p.GetImpulsePlane(normal.normalized, p.e);
+                    var impulse = p.GetImpulsePlane(normal.normalized);
                     p.MoveBack(normal);
                     p.velocity += impulse / p.mass;
                 }
