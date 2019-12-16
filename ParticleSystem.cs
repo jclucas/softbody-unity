@@ -101,6 +101,43 @@ public class ParticleSystem {
     }
 
     /// <summary>
+    /// Pins a particle in its current position.
+    /// </summary>
+    /// <param name="particle">Array index of particle to pin.</param>
+    public void Pin(int particle) {
+        particles[particle].frozen = true;
+    }
+
+    public void Unpin(int particle) {
+        particles[particle].frozen = false;
+    }
+
+    /// <summary>
+    /// Selects a particle by casting a ray in the scene.
+    /// </summary>
+    /// <param name="ray"></param>
+    /// <returns></returns>
+    public int? GetParticleFromRay(Ray ray, float radius = 0.1f) {
+
+        var minDistance = radius;
+        int? min = null;
+
+        for (int i = 0; i < particles.Length; i++) {
+            
+            var distance = Vector3.Cross(ray.direction, particles[i].position - ray.origin).magnitude;
+            
+            if (distance < minDistance) {
+                minDistance = distance;
+                min = i;
+            }
+
+        }
+
+        return min;
+
+    }
+
+    /// <summary>
     /// Perform collision detection and response.
     /// </summary>
     public void DetectCollisions() {

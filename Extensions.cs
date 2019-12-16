@@ -15,11 +15,18 @@ public static class Extensions {
         var next = new ParticleState[state.Length];
         
         for (int i = 0; i < state.Length; i++) {
+
             next[i] = new ParticleState();
+
             // step forward with current derivatives
-            next[i].position = state[i].position + state[i].velocity * dt;
-            next[i].velocity = state[i].velocity + state[i].force / state[i].mass * dt;
-            // calculate
+            next[i].position = state[i].position;
+            next[i].velocity = state[i].velocity;
+
+            if (!state[i].frozen) {
+                next[i].position += state[i].velocity * dt;
+                next[i].velocity += state[i].force / state[i].mass * dt;
+            }
+
             next[i].force = Vector3.zero;
         }
 

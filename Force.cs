@@ -8,9 +8,9 @@ public abstract class Force {
     /// <summary>
     /// Force evaluation function.
     /// </summary>
-    /// <param name="particle">index of particle being evaluated</param>
-    /// <param name="state">array of all particles in the system</param>
-    /// <param name="dt">evaluation timestep</param>
+    /// <param name="particle">Index of particle being evaluated.</param>
+    /// <param name="state">Array of all particles in the system.</param>
+    /// <param name="dt">Evaluation time step.</param>
     /// <returns></returns>
     public delegate Vector3 EvalFunction(int particle, Particle[] state, float dt);
 
@@ -22,7 +22,7 @@ public abstract class Force {
     /// <summary>
     /// Constructor for a force.
     /// </summary>
-    /// <param name="eval">evaluation function</param>
+    /// <param name="eval">Evaluation function.</param>
     public Force(EvalFunction eval) {
         this.eval = eval;
     }
@@ -30,8 +30,8 @@ public abstract class Force {
     /// <summary>
     /// Evaluates a force on a system.
     /// </summary>
-    /// <param name="state">current state of the system</param>
-    /// <param name="dt">evaluation timestep</param>
+    /// <param name="state">Current state of the system.</param>
+    /// <param name="dt">Evaluation time step.</param>
     /// <returns></returns>
     public abstract Vector3[] Eval(Particle[] state, float dt);
 
@@ -87,7 +87,7 @@ public class UnaryForce : Force {
 }
 
 /// <summary>
-/// An equal and opposite force applied to a pair of particles
+/// An equal and opposite force applied to a pair of particles.
 /// </summary>
 public class BinaryForce : Force {
 

@@ -28,7 +28,7 @@ public class Particle {
     public float e;
 
     /// <summary>
-    /// If true, the particle will not move, but continues to accumulate force and momentum.
+    /// If true, the particle will not move.
     /// </summary>
     public bool frozen;
 

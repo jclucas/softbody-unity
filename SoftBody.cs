@@ -90,6 +90,12 @@ public class SoftBody : MonoBehaviour {
 
     private ParticleSystem particles;
 
+    // MOUSE INTERACTION
+
+    private bool clicked = false;
+
+    private int pinned;
+
     protected void Awake() {
 
         // initialize structure
@@ -144,6 +150,36 @@ public class SoftBody : MonoBehaviour {
         
         particles.Update();
         DetectCollisions();
+
+        // handle mouse events
+        if (!clicked && Input.GetMouseButtonDown(0)) {
+
+            // check if a particle was selected
+            var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            var particle = particles.GetParticleFromRay(ray);
+
+            // pin that particle to the mouse position
+            if (particle != null) {
+                clicked = true;
+                pinned = particle.GetValueOrDefault();
+                particles.Pin(particle.GetValueOrDefault());
+            }
+
+        } else if (clicked && Input.GetMouseButtonUp(0)) {
+
+            // unpin the pinned particle
+            clicked = false;
+            particles.Unpin(pinned);
+
+        } else if (clicked) {
+
+            // update the pinned position
+            var mousePos = Input.mousePosition;
+            mousePos.z = (Camera.main.transform.position - particles.GetPosition(pinned)).magnitude;
+            var worldPos = Camera.main.ScreenToWorldPoint(mousePos);
+            particles.SetPosition(pinned, transform.InverseTransformPoint(worldPos));
+
+        }
 
         if (mesh) {
             UpdateGeometry();
