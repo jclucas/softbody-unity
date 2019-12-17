@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Elastic soft body system simulated by point masses and springs.
@@ -151,6 +152,11 @@ public class SoftBody : MonoBehaviour {
         particles.Update();
         DetectCollisions();
 
+        // demo utility -- reload scene with R
+        if (Input.GetKey(KeyCode.R)) {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
+
         // handle mouse events
         if (!clicked && Input.GetMouseButtonDown(0)) {
 
@@ -189,31 +195,43 @@ public class SoftBody : MonoBehaviour {
 
     void OnDrawGizmosSelected() {
 
-        Gizmos.color = Color.green;
+        if (structural != null) {
 
-        for (int p = 0; p < particles.size; p++) {
-            foreach (var n in structural[p]) {
-                Gizmos.DrawLine(transform.TransformPoint(particles.GetPosition(p)), 
-                        transform.TransformPoint(particles.GetPosition(n.Key)));
+            Gizmos.color = Color.green;
+
+            for (int p = 0; p < particles.size; p++) {
+                foreach (var n in structural[p]) {
+                    Gizmos.DrawLine(transform.TransformPoint(particles.GetPosition(p)), 
+                            transform.TransformPoint(particles.GetPosition(n.Key)));
+                }
             }
+
         }
 
-        Gizmos.color = Color.yellow;
+        if (shear != null) {
 
-        for (int p = 0; p < particles.size; p++) {
-            foreach (var n in shear[p]) {
-                Gizmos.DrawLine(transform.TransformPoint(particles.GetPosition(p)), 
-                        transform.TransformPoint(particles.GetPosition(n.Key)));
+            Gizmos.color = Color.yellow;
+
+            for (int p = 0; p < particles.size; p++) {
+                foreach (var n in shear[p]) {
+                    Gizmos.DrawLine(transform.TransformPoint(particles.GetPosition(p)), 
+                            transform.TransformPoint(particles.GetPosition(n.Key)));
+                }
             }
+
         }
 
-        Gizmos.color = Color.blue;
+        if (bend != null) {
 
-        for (int p = 0; p < particles.size; p++) {
-            foreach (var n in bend[p]) {
-                Gizmos.DrawLine(transform.TransformPoint(particles.GetPosition(p)), 
-                        transform.TransformPoint(particles.GetPosition(n.Key)));
+            Gizmos.color = Color.blue;
+
+            for (int p = 0; p < particles.size; p++) {
+                foreach (var n in bend[p]) {
+                    Gizmos.DrawLine(transform.TransformPoint(particles.GetPosition(p)), 
+                            transform.TransformPoint(particles.GetPosition(n.Key)));
+                }
             }
+
         }
 
     }
