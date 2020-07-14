@@ -1,5 +1,10 @@
-.webgl-content * {border: 0; margin: 0; padding: 0}
-.webgl-content {position: absolute; top: 50%; left: 50%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%);}
+/* .webgl-content * {border: 0; margin: 0; padding: 0} */
+.webgl-content {
+    background-color: white;
+    padding: 10px;
+    border: 3px;
+    border-style: double;
+}
 
 .webgl-content .logo, .progress {position: absolute; left: 50%; top: 50%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%);}
 .webgl-content .logo {background: url('progressLogo.Light.png') no-repeat center / contain; width: 154px; height: 130px;}
@@ -16,3 +21,12 @@
 .webgl-content .footer .webgl-logo {background-image: url('webgl-logo.png'); width: 204px; float: left;}
 .webgl-content .footer .title {margin-right: 10px; float: right;}
 .webgl-content .footer .fullscreen {background-image: url('fullscreen.png'); width: 38px; float: right;}
+
+body {
+    box-sizing: border-box;
+    width: 960px;
+    margin: 0px auto;
+    background-image: linear-gradient(#ccc3bb, #9d9187);
+    background-attachment: fixed;
+    background-size: 100% 100%;
+}
